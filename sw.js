@@ -1,6 +1,6 @@
-const CACHE = "ma-tech-by-kevin-v12";
+const CACHE = "ma-tech-by-kevin-v13";
 const ASSETS = ["./","./index.html","./offline.html","./manifest.json","css/style.css",
-  "js/config.js","js/store.js","js/auth.js","js/data.js","js/recalls.js","js/tsb.js","js/veille.js","js/updater.js","js/pdf.js","js/selftest.js","js/app.js",
+  "js/config.js","js/store.js","js/auth.js","js/data.js","js/recalls.js","js/tsb.js","js/veille.js","js/wallpaper.js","js/updater.js","js/pdf.js","js/selftest.js","js/app.js",
   "assets/img/bg-car.svg","assets/icons/icon.svg","assets/icons/favicon-32.png","assets/icons/apple-touch-180.png",
   "assets/icons/icon-192.png","assets/icons/icon-512.png","assets/icons/icon-maskable-512.png"];
 self.addEventListener("install", e => { e.waitUntil((async()=>{ const c=await caches.open(CACHE);
