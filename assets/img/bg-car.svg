@@ -1,27 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
   <defs>
-    <linearGradient id="paint" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff8a3c"/><stop offset=".5" stop-color="#e04e12"/><stop offset="1" stop-color="#7a2606"/>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff9a4d"/><stop offset=".35" stop-color="#e0501a"/>
+      <stop offset=".7" stop-color="#8f2a08"/><stop offset="1" stop-color="#4a1403"/>
+    </linearGradient>
+    <linearGradient id="hood" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffb27a"/><stop offset=".5" stop-color="#e0501a"/><stop offset="1" stop-color="#7a2606"/>
     </linearGradient>
     <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#bfe9ff" stop-opacity=".85"/><stop offset="1" stop-color="#274b63" stop-opacity=".9"/>
+      <stop offset="0" stop-color="#cfeeff" stop-opacity=".9"/><stop offset=".5" stop-color="#5b87a6" stop-opacity=".85"/><stop offset="1" stop-color="#16222e" stop-opacity=".95"/>
     </linearGradient>
-    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
-      <stop offset="0" stop-color="#ffb46b" stop-opacity=".5"/><stop offset="1" stop-color="#ffb46b" stop-opacity="0"/>
+    <radialGradient id="glow" cx=".42" cy=".55" r=".6">
+      <stop offset="0" stop-color="#ffb46b" stop-opacity=".45"/><stop offset="1" stop-color="#ffb46b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="wheel" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#3a4656"/><stop offset=".55" stop-color="#141a22"/><stop offset="1" stop-color="#05070a"/>
     </radialGradient>
   </defs>
-  <ellipse cx="800" cy="440" rx="640" ry="46" fill="#000" opacity=".55"/>
-  <ellipse cx="800" cy="330" rx="720" ry="190" fill="url(#glow)"/>
-  <path d="M120 360 C160 300 240 268 360 252 C470 190 620 160 800 158 C980 160 1120 190 1230 250 C1360 262 1450 300 1480 352 C1500 380 1490 402 1450 408 L1330 416 C1310 372 1270 344 1220 344 C1170 344 1130 372 1112 416 L520 416 C502 372 462 344 412 344 C362 344 322 372 304 416 L170 408 C130 402 108 386 120 360 Z" fill="url(#paint)"/>
-  <path d="M430 250 C520 200 650 176 800 174 C930 176 1040 196 1130 240 C1040 250 900 256 800 256 C660 256 520 254 430 250 Z" fill="url(#glass)"/>
-  <path d="M780 176 L800 254 L640 252 C700 214 740 190 780 176 Z" fill="#0e2230" opacity=".55"/>
-  <path d="M120 360 C200 344 300 336 420 334" stroke="#ffd9b0" stroke-width="6" fill="none" opacity=".7"/>
-  <path d="M1470 350 C1400 336 1330 330 1250 328" stroke="#ff5d5d" stroke-width="8" fill="none" opacity=".8"/>
-  <path d="M300 300 C420 286 560 280 700 280" stroke="#00000055" stroke-width="10" fill="none"/>
-  <circle cx="412" cy="400" r="72" fill="#0a0d12"/><circle cx="412" cy="400" r="40" fill="#1c2430"/>
-  <g stroke="#8fa0b8" stroke-width="8"><path d="M412 366 V434 M378 400 H446 M388 376 L436 424 M436 376 L388 424"/></g>
-  <circle cx="1220" cy="400" r="72" fill="#0a0d12"/><circle cx="1220" cy="400" r="40" fill="#1c2430"/>
-  <g stroke="#8fa0b8" stroke-width="8"><path d="M1220 366 V434 M1186 400 H1254 M1196 376 L1244 424 M1244 376 L1196 424"/></g>
-  <path d="M1330 250 L1420 236 L1428 252 L1340 266 Z" fill="#5a1c05"/>
-  <path d="M180 372 L260 366 L268 386 L188 392 Z" fill="#120602" opacity=".6"/>
+  <ellipse cx="820" cy="760" rx="660" ry="60" fill="#000" opacity=".6"/>
+  <ellipse cx="760" cy="520" rx="760" ry="300" fill="url(#glow)"/>
+  <!-- caisse 3/4 avant gauche : face avant à gauche, flanc vers la droite -->
+  <path d="M180 600 C170 540 200 480 280 452 C340 430 420 414 520 404 C600 330 720 292 880 288 C1040 292 1160 330 1240 402 C1330 414 1400 436 1440 470 C1480 504 1488 552 1470 596 C1450 636 1400 652 1330 656 L1210 662 C1190 606 1140 570 1080 570 C1020 570 972 606 952 662 L560 662 C540 606 490 570 430 570 C370 570 322 606 302 662 L250 656 C200 650 186 632 180 600 Z" fill="url(#paint)"/>
+  <!-- capot + face avant -->
+  <path d="M280 452 C360 430 440 416 520 404 C560 430 600 452 640 466 C560 486 460 500 360 506 C310 500 288 480 280 452 Z" fill="url(#hood)"/>
+  <path d="M196 560 C240 540 300 528 360 524 L368 560 C300 566 240 574 200 584 Z" fill="#1a0b04" opacity=".85"/>
+  <path d="M212 500 C260 486 320 476 380 472 L386 496 C320 502 260 510 216 520 Z" fill="#ffd9b0" opacity=".85"/>
+  <!-- pare-brise + toit + vitres latérales -->
+  <path d="M560 402 C640 336 740 306 880 302 C1000 306 1100 334 1170 396 C1080 410 960 418 860 418 C740 418 640 412 560 402 Z" fill="url(#glass)"/>
+  <path d="M900 306 L940 414 L1160 400 C1100 344 1010 314 900 306 Z" fill="#0e2230" opacity=".55"/>
+  <path d="M950 416 L1180 402 C1230 420 1268 442 1290 468 L960 470 Z" fill="url(#glass)" opacity=".8"/>
+  <!-- rétroviseur -->
+  <path d="M540 402 L500 386 L492 402 L536 416 Z" fill="#5a1c05"/>
+  <!-- jantes / roues (avant gauche tournée) -->
+  <g>
+    <ellipse cx="430" cy="640" rx="96" ry="92" fill="url(#wheel)"/>
+    <ellipse cx="430" cy="640" rx="52" ry="50" fill="#232c38"/>
+    <g stroke="#9fb0c4" stroke-width="9" stroke-linecap="round">
+      <path d="M430 596 V684 M386 640 H474 M398 608 L462 672 M462 608 L398 672"/>
+    </g>
+    <ellipse cx="1080" cy="640" rx="86" ry="82" fill="url(#wheel)"/>
+    <ellipse cx="1080" cy="640" rx="46" ry="44" fill="#232c38"/>
+    <g stroke="#9fb0c4" stroke-width="8" stroke-linecap="round">
+      <path d="M1080 600 V680 M1040 640 H1120 M1052 612 L1108 668 M1108 612 L1052 668"/>
+    </g>
+  </g>
+  <!-- bas de caisse + entrée d'air -->
+  <path d="M300 662 L950 662 L940 690 L320 690 Z" fill="#12060299"/>
+  <path d="M1210 662 L1330 656 L1320 686 L1216 690 Z" fill="#12060299"/>
+  <!-- reflets -->
+  <path d="M360 506 C560 494 820 488 1080 492" stroke="#ffd9b0" stroke-width="6" fill="none" opacity=".5"/>
+  <path d="M1440 470 C1400 452 1340 440 1270 434" stroke="#ff5d5d" stroke-width="8" fill="none" opacity=".7"/>
 </svg>
