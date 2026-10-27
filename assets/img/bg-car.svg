@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+  <defs>
+    <linearGradient id="paint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a3c"/><stop offset=".5" stop-color="#e04e12"/><stop offset="1" stop-color="#7a2606"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bfe9ff" stop-opacity=".85"/><stop offset="1" stop-color="#274b63" stop-opacity=".9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffb46b" stop-opacity=".5"/><stop offset="1" stop-color="#ffb46b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="800" cy="440" rx="640" ry="46" fill="#000" opacity=".55"/>
+  <ellipse cx="800" cy="330" rx="720" ry="190" fill="url(#glow)"/>
+  <path d="M120 360 C160 300 240 268 360 252 C470 190 620 160 800 158 C980 160 1120 190 1230 250 C1360 262 1450 300 1480 352 C1500 380 1490 402 1450 408 L1330 416 C1310 372 1270 344 1220 344 C1170 344 1130 372 1112 416 L520 416 C502 372 462 344 412 344 C362 344 322 372 304 416 L170 408 C130 402 108 386 120 360 Z" fill="url(#paint)"/>
+  <path d="M430 250 C520 200 650 176 800 174 C930 176 1040 196 1130 240 C1040 250 900 256 800 256 C660 256 520 254 430 250 Z" fill="url(#glass)"/>
+  <path d="M780 176 L800 254 L640 252 C700 214 740 190 780 176 Z" fill="#0e2230" opacity=".55"/>
+  <path d="M120 360 C200 344 300 336 420 334" stroke="#ffd9b0" stroke-width="6" fill="none" opacity=".7"/>
+  <path d="M1470 350 C1400 336 1330 330 1250 328" stroke="#ff5d5d" stroke-width="8" fill="none" opacity=".8"/>
+  <path d="M300 300 C420 286 560 280 700 280" stroke="#00000055" stroke-width="10" fill="none"/>
+  <circle cx="412" cy="400" r="72" fill="#0a0d12"/><circle cx="412" cy="400" r="40" fill="#1c2430"/>
+  <g stroke="#8fa0b8" stroke-width="8"><path d="M412 366 V434 M378 400 H446 M388 376 L436 424 M436 376 L388 424"/></g>
+  <circle cx="1220" cy="400" r="72" fill="#0a0d12"/><circle cx="1220" cy="400" r="40" fill="#1c2430"/>
+  <g stroke="#8fa0b8" stroke-width="8"><path d="M1220 366 V434 M1186 400 H1254 M1196 376 L1244 424 M1244 376 L1196 424"/></g>
+  <path d="M1330 250 L1420 236 L1428 252 L1340 266 Z" fill="#5a1c05"/>
+  <path d="M180 372 L260 366 L268 386 L188 392 Z" fill="#120602" opacity=".6"/>
+</svg>
