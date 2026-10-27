@@ -1,0 +1,36 @@
+name: generate-png-icons
+
+on:
+  push:
+    paths:
+      - "assets/icons/*.svg"
+      - "tools/gen-icons.mjs"
+      - ".github/workflows/icons.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install sharp
+        run: npm install --no-save sharp
+
+      - name: Generate PNG icons from SVG
+        run: node tools/gen-icons.mjs
+
+      - name: Commit PNG back into the repo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(icons): generation automatique des PNG du manifest"
+          file_pattern: "assets/icons/*.png"
