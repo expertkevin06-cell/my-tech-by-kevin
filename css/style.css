@@ -1,6 +1,9 @@
 :root{--bg:#0b0f1a;--panel:#131a2a;--panel2:#1a2338;--bd:#26304a;--txt:#e8ecf4;--mut:#8b96ad;--acc:#2e8fff;--ok:#2ecc71;--warn:#f39c12;--err:#e74c3c}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+/* Fond d'écran permanent : véhicule sportif moderne */
+body{background:var(--bg) url("../assets/img/bg-car.svg") no-repeat fixed center bottom/100% auto;color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body::before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,15,26,.86),rgba(11,15,26,.94));pointer-events:none;z-index:0}
+#app{position:relative;z-index:1}
 a{color:var(--acc);text-decoration:none}
 h1{font-size:1.25rem}h2{font-size:1.05rem;margin:.2rem 0}h3{font-size:.95rem}
 .topbar{display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem;background:var(--panel);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:10;flex-wrap:wrap}
@@ -51,4 +54,5 @@ tr:hover td{background:rgba(46,143,255,.06)}
 .footer{text-align:center;color:var(--mut);font-size:.75rem;padding:1.5rem 1rem 2.5rem}
 .toast{position:fixed;bottom:3rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--acc);border-radius:10px;padding:.55rem 1.1rem;opacity:0;transition:.25s;z-index:99;max-width:90vw}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.sysfault{border-top:1px solid var(--bd);margin-top:.6rem;padding-top:.6rem}
 @media(max-width:640px){th:nth-child(4),td:nth-child(4){display:none}}
