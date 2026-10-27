@@ -1,0 +1,223 @@
+{
+  "app": "Ma Tech by Kevin",
+  "version": 1793085611919,
+  "date": "2026-10-27T07:20:11.919Z",
+  "items": [
+    {
+      "type": "model",
+      "id": "MOD-REN-TWINGO-2026",
+      "brand": "Renault",
+      "model": "Twingo E-Tech",
+      "y0": 2026,
+      "engines": [
+        "Électrique 95",
+        "Électrique 130"
+      ]
+    },
+    {
+      "type": "model",
+      "id": "MOD-VW-ID2-2026",
+      "brand": "Volkswagen",
+      "model": "ID.2",
+      "y0": 2026,
+      "engines": [
+        "Électrique 170",
+        "Électrique 204",
+        "Électrique 226"
+      ]
+    },
+    {
+      "type": "model",
+      "id": "MOD-SKO-EPIQ-2026",
+      "brand": "Skoda",
+      "model": "Epiq",
+      "y0": 2026,
+      "engines": [
+        "Électrique 170",
+        "Électrique 204"
+      ]
+    },
+    {
+      "type": "model",
+      "id": "MOD-PEU-208III-2026",
+      "brand": "Peugeot",
+      "model": "208 III",
+      "y0": 2026,
+      "engines": [
+        "1.2 Hybrid 110",
+        "1.2 Hybrid 145",
+        "Électrique 156"
+      ]
+    },
+    {
+      "type": "engine",
+      "id": "ENG-REN-AUSTRAL-2026",
+      "brand": "Renault",
+      "model": "Austral",
+      "y0": 2026,
+      "engines": [
+        "1.3 TCe 160"
+      ]
+    },
+    {
+      "id": "NHTSA-25V835000",
+      "type": "recall",
+      "brand": "Volkswagen",
+      "model": "Id.4",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "WHEELS:LUGS/NUTS/BOLTS/STUDS",
+      "risk": "Incorrect wheel bolts can allow a wheel to detach from the vehicle, increasing the risk of a crash.",
+      "fix": "Owners are advised not to drive their vehicles until they have been repaired. Dealers will inspect and replace the wheel bolts as necessary, free of charge. Owner notification letters were mailed December 12, 2025. Owners may contact Volkswagen customer service at 1-800-893-5298. Volkswagen's number for this recall is 44BW. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on December 5, 2025.",
+      "src": "NHTSA",
+      "ref": "25V835000",
+      "date": "03/12/2025",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V630000",
+      "type": "recall",
+      "brand": "Volkswagen",
+      "model": "Id.4",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "ELECTRICAL SYSTEM:PROPULSION SYSTEM:TRACTION BATTERY",
+      "risk": "A vehicle fire increases the risk of injury.",
+      "fix": "Owners are advised to only charge their vehicles to a maximum of 80% battery capacity until the repair has been completed. The remedy is currently under development. Interim letters, notifying owners of the safety risk, are expected to be mailed November 27, 2026. Additional letters will be sent once the remedy is available. Owners may contact Volkswagen customer service at 1-800-893-5298. Volkswagen's number for this recall is 93EX. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on October 6, 2026.",
+      "src": "NHTSA",
+      "ref": "26V630000",
+      "date": "30/09/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-25V410000",
+      "type": "recall",
+      "brand": "Tesla",
+      "model": "Model 3",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "SEATS:CRITICAL FASTENERS",
+      "risk": "The seat may not properly restrain the occupant, increasing the risk of injury during a crash.",
+      "fix": "Tesla Service Centers will inspect and tighten or replace the seat assembly fasteners as necessary, free of charge. Owner notification letters were mailed August 16, 2025. Owners may contact Tesla customer service at 1-877-798-3752. Tesla's number for this recall is SB-25-13-003.",
+      "src": "NHTSA",
+      "ref": "25V410000",
+      "date": "18/06/2025",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-25V857000",
+      "type": "recall",
+      "brand": "Bmw",
+      "model": "X3",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "STEERING:STEERING CONTROL MODULE",
+      "risk": "Unintended steering wheel movement while the vehicle is stationary increases the risk of an injury and on the road, a crash.",
+      "fix": "The steering system software will be updated, free of charge, either over-the-air (OTA) or by a dealer. Owner notification letters were mailed February 6, 2026. Owners may contact BMW customer service at 1-800-525-7417. Vehicle Identification Numbers (VINs) involved in this recall will be searchable on NHTSA.gov beginning February 2, 2026.",
+      "src": "NHTSA",
+      "ref": "25V857000",
+      "date": "11/12/2025",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V524000",
+      "type": "recall",
+      "brand": "Bmw",
+      "model": "X3",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "STEERING:LINKAGES:KNUCKLE:SPINDLE:ARM",
+      "risk": "An incorrectly attached steering spindle can lead to a loss of steering control, increasing the risk of a crash.",
+      "fix": "Dealers will inspect the steering connection and replace hardware or replace the spindle and column, as necessary, free of charge. Owner notification letters were mailed October 8, 2026.  Owners may contact BMW customer service at 1-800-525-7417. Vehicle Identification Numbers (VINs) involved in this recall will become searchable on NHTSA.gov beginning October 2, 2026.",
+      "src": "NHTSA",
+      "ref": "26V524000",
+      "date": "12/08/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-25V549000",
+      "type": "recall",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "ENGINE AND ENGINE COOLING:CRITICAL FASTENERS",
+      "risk": "A loss of drive power increases the risk of a crash. An oil leak in the presence of hot engine components can increase the risk of an engine compartment fire.",
+      "fix": "Dealers will replace the engine, free of charge. Owner notification letters were mailed October 23, 2025. Owners may contact Hyundai customer service at 1-855-371-9460. Hyundai's number for this recall is 281.",
+      "src": "NHTSA",
+      "ref": "25V549000",
+      "date": "26/08/2025",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V047000",
+      "type": "recall",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "ELECTRICAL SYSTEM: INSTRUMENT CLUSTER/PANEL",
+      "risk": "An instrument panel display that fails to show critical safety information, such as the speedometer or warning lights, increases the risk of a crash.",
+      "fix": "The instrument panel display software will be updated over-the-air (OTA) or by a dealer, free of charge. Owner notification letters were mailed March 24, 2026. Owners may contact Hyundai's customer service at 855-371-9460. Hyundai's number for this recall is 293. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on January 28, 2026.",
+      "src": "NHTSA",
+      "ref": "26V047000",
+      "date": "27/01/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V254000",
+      "type": "recall",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "AIR BAGS:SENSOR:SIDE IMPACT",
+      "risk": "Air bags that do not deploy as intended increase the risk of injury in a crash.",
+      "fix": "Dealers will inspect and replace the impact sensor(s), as necessary, free of charge. Owner notification letters were mailed June 11, 2026. Owners may contact Hyundai's customer service at 855-371-9460. Hyundai's number for this recall is 299. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on April 22, 2026.",
+      "src": "NHTSA",
+      "ref": "26V254000",
+      "date": "21/04/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V316000",
+      "type": "recall",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "FORWARD COLLISION AVOIDANCE: AUTOMATIC EMERGENCY BRAKING",
+      "risk": "Unexpected braking increases the risk of a crash.",
+      "fix": "Dealers will update the front camera software, free of charge. Owner notification letters are expected to be mailed July 17, 2026. Owners may contact Hyundai customer service at 1-855-371-9460. Hyundai's number for this recall is 302. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on May 20, 2026.",
+      "src": "NHTSA",
+      "ref": "26V316000",
+      "date": "19/05/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V400000",
+      "type": "recall",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "ELECTRICAL SYSTEM: INSTRUMENT CLUSTER/PANEL",
+      "risk": "An instrument panel display that fails to show critical safety information, such as the speedometer or warning lights, increases the risk of a crash.",
+      "fix": "The instrument panel display software will be updated over-the-air (OTA) or by a dealer, free of charge. Owner notification letters are expected to be mailed August 22, 2026. Owners may contact Hyundai's customer service at 855-371-9460. Hyundai's number for this recall is 304. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on June 25, 2026.",
+      "src": "NHTSA",
+      "ref": "26V400000",
+      "date": "24/06/2026",
+      "dtcs": [],
+      "sev": 3
+    }
+  ]
+}
