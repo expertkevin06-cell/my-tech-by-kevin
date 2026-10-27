@@ -1,9 +1,9 @@
-const CACHE = "ma-tech-by-kevin-v7";
+const CACHE = "ma-tech-by-kevin-v8";
 const ASSETS = [
   "./", "./index.html", "./offline.html", "./manifest.json",
   "css/style.css",
   "js/config.js", "js/store.js", "js/auth.js",
-  "js/data.js", "js/recalls.js", "js/updater.js", "js/app.js",
+  "js/data.js", "js/recalls.js", "js/tsb.js", "js/updater.js", "js/app.js",
   "assets/img/bg-car.svg",
   "assets/icons/icon.svg",
   "assets/icons/favicon-32.png", "assets/icons/apple-touch-180.png",
