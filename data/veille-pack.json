@@ -1,7 +1,7 @@
 {
   "app": "Ma Tech by Kevin",
-  "version": 1793085611919,
-  "date": "2026-10-27T07:20:11.919Z",
+  "version": 1793103151041,
+  "date": "2026-10-27T12:12:31.041Z",
   "items": [
     {
       "type": "model",
@@ -58,6 +58,105 @@
       "engines": [
         "1.3 TCe 160"
       ]
+    },
+    {
+      "type": "tsb",
+      "id": "TSB-STL-DV5-CHAIN-EXT",
+      "src": "TSB",
+      "ref": "Stellantis B24-0210 (DV5 étendu)",
+      "brand": "Peugeot",
+      "model": "",
+      "eng": [
+        "1.5 hdi",
+        "1.5 bluehdi"
+      ],
+      "en": [
+        "Diesel"
+      ],
+      "y0": 2022,
+      "y1": 2024,
+      "comp": "Chaîne de distribution 8 mm (contrôle)",
+      "prob": "Contrôle chaîne 8 mm après extension garantie",
+      "sym": [
+        "Claquement"
+      ],
+      "fix": "Contrôle/remplacement chaîne 8 mm",
+      "dtcs": [
+        "P0016"
+      ],
+      "sev": 3
+    },
+    {
+      "type": "tsb",
+      "id": "TSB-REN-R5-12V-2026",
+      "src": "TSB",
+      "ref": "Renault B26-0014",
+      "brand": "Renault",
+      "model": "R5",
+      "eng": [
+        "électrique"
+      ],
+      "en": [
+        "Électrique"
+      ],
+      "y0": 2025,
+      "y1": 2026,
+      "comp": "Batterie 12V AGM",
+      "prob": "Décharge 12V prématurée",
+      "sym": [
+        "Démarrage impossible"
+      ],
+      "fix": "Remplacement 12V + MAJ gestion veille",
+      "dtcs": [
+        "P0562"
+      ],
+      "sev": 3
+    },
+    {
+      "type": "tsb",
+      "id": "TSB-VW-MEB-BMS2-2026",
+      "src": "TSB",
+      "ref": "VW B26-0033 (MEB)",
+      "brand": "Volkswagen",
+      "model": "ID.4",
+      "eng": [
+        "électrique"
+      ],
+      "en": [
+        "Électrique"
+      ],
+      "y0": 2024,
+      "y1": 2026,
+      "comp": "BMS calibration SOC v2",
+      "prob": "SOC erratique après charge rapide",
+      "sym": [
+        "Autonomie erratique"
+      ],
+      "fix": "MAJ BMS v2",
+      "dtcs": [
+        "P1A15"
+      ],
+      "sev": 2
+    },
+    {
+      "type": "tsb",
+      "id": "TSB-DAC-BIGSTER-RESS-2",
+      "src": "TSB",
+      "ref": "Dacia B26-0007",
+      "brand": "Dacia",
+      "model": "Bigster",
+      "eng": [],
+      "en": [],
+      "y0": 2025,
+      "y1": 2026,
+      "comp": "Ressorts arrière (lot 2)",
+      "prob": "Casse ressorts lot 2",
+      "sym": [
+        "Claquement arrière"
+      ],
+      "fix": "Ressorts diamètre majoré",
+      "dtcs": [],
+      "sev": 3
     },
     {
       "id": "NHTSA-25V835000",
@@ -216,6 +315,38 @@
       "src": "NHTSA",
       "ref": "26V400000",
       "date": "24/06/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V136000",
+      "type": "recall",
+      "brand": "Volvo",
+      "model": "Ex30",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "SEAT BELTS:FRONT:WARNING LIGHT/DEVICES",
+      "risk": "An audible warning chime that does not properly alert of an unbelted seat belt can increase the risk of injury during a crash.",
+      "fix": "Dealers will replace the terminals at the audio module connector, free of charge. Owner notification letters were mailed March 26, 2026. Owners may contact Volvo Car’s customer service at 1-800-458-1552. Volvo Car’s number for this recall is R10365. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on March 13, 2026.",
+      "src": "NHTSA",
+      "ref": "26V136000",
+      "date": "11/03/2026",
+      "dtcs": [],
+      "sev": 3
+    },
+    {
+      "id": "NHTSA-26V671000",
+      "type": "recall",
+      "brand": "Volvo",
+      "model": "Ex30",
+      "y0": 2026,
+      "y1": 2026,
+      "comp": "SEATS:FRONT ASSEMBLY:HEAD RESTRAINT",
+      "risk": "A detached head restraint cushion can increase the risk of injury during a crash.",
+      "fix": "Dealers will apply an adhesive to reinforce the head cushion attachment, free of charge. Owner notification letters are expected to be mailed November 30, 2026. Owners may contact Volvo Car’s customer service at 1-800-458-1552. Volvo Car’s number for this recall is R10396. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on October 9, 2026.",
+      "src": "NHTSA",
+      "ref": "26V671000",
+      "date": "09/10/2026",
       "dtcs": [],
       "sev": 3
     }
