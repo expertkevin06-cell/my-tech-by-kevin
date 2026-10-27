@@ -1,0 +1,26 @@
+{
+  "name": "Ma Tech by Kevin — 21 000 fiches OBD",
+  "short_name": "Ma Tech Kevin",
+  "description": "Ma Tech by Kevin : 21000 fiches diagnostic OBD, pannes connues et rappels constructeurs, toutes marques, tous modèles, toutes motorisations et puissances 2017 à 2026. Mode admin, accès tiers, hors ligne.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
+  "categories": ["utilities", "productivity", "education"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Recherche DTC", "url": "./index.html#/search" },
+    { "name": "Véhicules 2017-2026", "url": "./index.html#/veh" },
+    { "name": "Campagnes de rappels", "url": "./index.html#/recalls" },
+    { "name": "Administration", "url": "./index.html#/admin" }
+  ]
+}
