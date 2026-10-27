@@ -1,0 +1,23 @@
+name: veille-15j
+on:
+  schedule:
+    - cron: "0 3 1,16 * *"      # tous les 15 jours (1er et 16)
+  workflow_dispatch:
+  push:
+    paths: ["tools/veille.mjs", ".github/workflows/veille.yml"]
+permissions:
+  contents: write
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Collecte NHTSA + nouveaux modèles
+        run: node tools/veille.mjs
+      - name: Commit du pack de veille
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "veille: nouvelles données (modèles, motorisations, rappels, TSB)"
+          file_pattern: "data/veille-pack.json veille.json"
