@@ -9,6 +9,11 @@ function toast(msg){
   setTimeout(() => t.classList.add("show"), 10);
   setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 300); }, 3800);
 }
+/* Navigation fiable : change le hash ET garantit le rendu (même hash = rendu direct) */
+function navigate(h){
+  if (location.hash === h) App.route();
+  else location.hash = h;
+}
 
 const App = {
   deferredPrompt: null,
@@ -17,12 +22,11 @@ const App = {
 
   async start(){
     await Auth.init();
-    /* Installation PWA (téléchargeable) */
+    /* CORRECTION MENUS : tout changement de hash re-rend la vue */
+    window.addEventListener("hashchange", () => App.route());
     window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); App.deferredPrompt = e; });
-    /* Connexion permanente : indicateur en ligne / hors ligne */
     window.addEventListener("online", () => { App.updateNet(); toast("🌐 Connexion rétablie (4G/5G/Wi‑Fi)"); });
     window.addEventListener("offline", () => { App.updateNet(); toast("⛔ Hors ligne — mode local actif (sauvegarde incluse)"); });
-    /* Mise à jour auto du pack de données */
     Updater.checkAndApply()
       .then(r => { if (r.ok) toast("✅ Mise à jour v" + r.version + " appliquée automatiquement"); })
       .catch(() => {});
@@ -58,15 +62,23 @@ const App = {
   },
 
   route(){
-    if (!Session.get()) return App.renderLogin();
-    const h = location.hash.replace(/^#\//,"") || "search";
-    const [view, arg] = h.split("/");
-    if (view === "admin" && !isAdmin()){ location.hash = "#/search"; return; }
-    App.state.view = view;
-    if (view === "fiche" && arg) return App.renderShell(App.renderFiche(decodeURIComponent(arg)));
-    if (view === "rappel" && arg) return App.renderShell(App.renderRappel(decodeURIComponent(arg)));
-    const V = { search: App.renderSearch, codes: App.renderCodes, veh: App.renderVeh, recalls: App.renderRecalls, admin: App.renderAdmin };
-    App.renderShell((V[view] || App.renderSearch)());
+    try{
+      if (!Session.get()) return App.renderLogin();
+      const h = location.hash.replace(/^#\//,"") || "search";
+      const [view, arg] = h.split("/");
+      if (view === "admin" && !isAdmin()){ if (location.hash !== "#/search") location.hash = "#/search"; return; }
+      App.state.view = view;
+      if (view === "fiche" && arg) return App.renderShell(App.renderFiche(decodeURIComponent(arg)));
+      if (view === "rappel" && arg) return App.renderShell(App.renderRappel(decodeURIComponent(arg)));
+      const V = { search: App.renderSearch, codes: App.renderCodes, veh: App.renderVeh, recalls: App.renderRecalls, admin: App.renderAdmin };
+      App.renderShell((V[view] || App.renderSearch)());
+      window.scrollTo(0, 0);
+    }catch(err){
+      console.error(err);
+      $("#app").innerHTML = `<div class="card"><h1>⚠️ Erreur d'affichage</h1>
+        <p class="muted">${esc(err.message)}</p>
+        <button class="btn" onclick="location.hash='#/search';location.reload()">Recharger l'application</button></div>`;
+    }
   },
 
   renderShell(body){
@@ -82,11 +94,11 @@ const App = {
       <button class="btn sec small" data-act="logout">Déconnexion</button>
     </div>
     <nav class="tabs" style="padding:.4rem 1rem;background:var(--panel);border-bottom:1px solid var(--bd);display:flex">
-      <button data-act="nav" data-view="search" class="${App.state.view==='search'?'active':''}">🔍 Recherche</button>
-      <button data-act="nav" data-view="codes" class="${App.state.view==='codes'?'active':''}">📟 Codes DTC</button>
-      <button data-act="nav" data-view="veh" class="${App.state.view==='veh'?'active':''}">🚗 Véhicules</button>
-      <button data-act="nav" data-view="recalls" class="${App.state.view==='recalls'||App.state.view==='rappel'?'active':''}">📢 Rappels</button>
-      ${isAdmin()?'<button data-act="nav" data-view="admin" class="'+(App.state.view==='admin'?'active':'')+'">🛠️ Administration</button>':''}
+      <button type="button" data-act="nav" data-view="search" class="${App.state.view==='search'?'active':''}">🔍 Recherche</button>
+      <button type="button" data-act="nav" data-view="codes" class="${App.state.view==='codes'?'active':''}">📟 Codes DTC</button>
+      <button type="button" data-act="nav" data-view="veh" class="${App.state.view==='veh'?'active':''}">🚗 Véhicules</button>
+      <button type="button" data-act="nav" data-view="recalls" class="${App.state.view==='recalls'||App.state.view==='rappel'?'active':''}">📢 Rappels</button>
+      ${isAdmin()?'<button type="button" data-act="nav" data-view="admin" class="'+(App.state.view==='admin'?'active':'')+'">🛠️ Administration</button>':''}
     </nav>
     ${role==='tier'?'<div style="background:#102a3a;color:#5ec1ff;text-align:center;padding:.35rem;font-size:.8rem">Mode accès tiers — consultation seule • mises à jour reçues automatiquement</div>':''}
     <main>${body}</main>
@@ -119,11 +131,11 @@ const App = {
     </div></div>`;
     App.updateNet();
     $("#l-admin").onclick = async () => {
-      if (await Auth.loginAdmin($("#l-user").value, $("#l-pass").value)) App.route();
+      if (await Auth.loginAdmin($("#l-user").value, $("#l-pass").value)){ location.hash = "#/search"; App.route(); }
       else $("#l-err").textContent = "Identifiants administrateur incorrects.";
     };
     $("#l-tier").onclick = () => {
-      if (Auth.loginTier($("#l-code").value)) App.route();
+      if (Auth.loginTier($("#l-code").value)){ location.hash = "#/search"; App.route(); }
       else $("#l-err2").textContent = "Code tiers invalide, inactif ou expiré.";
     };
   },
@@ -476,7 +488,7 @@ const App = {
         </div>
         <button class="btn" id="u-gh" style="margin-top:.7rem">🚀 Publier sur GitHub</button>
         <div id="u-msg"></div>
-        <p class="muted" style="margin-top:.8rem">Après publication, <b>tous les utilisateurs (tiers compris)</b> reçoivent et appliquent la mise à jour automatiquement au prochain lancement, en ligne comme hors ligne après synchronisation.</p></div>`;
+        <p class="muted" style="margin-top:.8rem">Après publication, <b>tous les utilisateurs (tiers compris)</b> reçoivent et appliquent la mise à jour automatiquement au prochain lancement.</p></div>`;
       const d = Updater.detectRepo();
       $("#u-owner").value = d.owner; $("#u-repo").value = d.repo;
       Updater.serverManifest().then(m => { $("#u-srv").textContent = m ? "v" + m.version : "aucune (première publication)"; if (m) $("#u-ver").value = m.version + 1; });
@@ -643,13 +655,13 @@ const App = {
   }
 };
 
-/* ===== clics centralisés (fiables mobile / APK) ===== */
+/* ===== clics centralisés (fiables mobile / APK / WebView) ===== */
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]");
   if (!el) return;
   const S = App.state;
   switch (el.dataset.act){
-    case "nav": location.hash = "#/" + el.dataset.view; break;
+    case "nav": navigate("#/" + el.dataset.view); break;
     case "logout": Auth.logout(); location.hash = ""; App.renderLogin(); break;
     case "share": App.doShare(); break;
     case "install": App.doInstall(); break;
@@ -658,8 +670,8 @@ document.addEventListener("click", e => {
     case "recalls-go": S.recBrand = $("#r-brand").value; S.recYear = $("#r-year").value; App.route(); break;
     case "page-prev": S.page--; App.renderPage(); break;
     case "page-next": S.page++; App.renderPage(); break;
-    case "open-fiche": location.hash = "#/fiche/" + encodeURIComponent(el.dataset.key); break;
-    case "open-rappel": location.hash = "#/rappel/" + encodeURIComponent(el.dataset.id); break;
+    case "open-fiche": navigate("#/fiche/" + encodeURIComponent(el.dataset.key)); break;
+    case "open-rappel": navigate("#/rappel/" + encodeURIComponent(el.dataset.id)); break;
     case "back": history.back(); break;
     case "veh-brand": S.vehBrand = el.dataset.brand; S.vehModel = ""; S.vehEngine = ""; App.route(); break;
     case "veh-model": S.vehModel = el.dataset.model; S.vehEngine = ""; App.route(); break;
@@ -675,7 +687,7 @@ document.addEventListener("click", e => {
         Store.setDeleted(el.dataset.key, true);
         const ci = Store.customs().findIndex(c => c.key === el.dataset.key);
         if (ci >= 0) Store.removeCustom(ci);
-        location.hash = "#/codes";
+        navigate("#/codes");
       }
       break;
     case "modal-close": el.closest(".modal-bg").remove(); break;
