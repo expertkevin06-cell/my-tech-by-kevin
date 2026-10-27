@@ -18,6 +18,7 @@ const App = {
 
   async start(){
     await Auth.init();
+    if (!Session.get() && await Auth.autoLogin()) { /* souvenir appareil */ }
     window.addEventListener("hashchange", () => App.route());
     window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); App.deferredPrompt = e; });
     window.addEventListener("online", () => { App.updateNet(); toast("🌐 Connexion rétablie (4G/5G/Wi‑Fi)"); });
@@ -32,7 +33,7 @@ const App = {
   },
   async doShare(){
     const url = location.origin + location.pathname;
-    const data = { title: "Ma Tech by Kevin", text: "Ma Tech by Kevin — 21 000 fiches DTC, pannes & rappels 2017-2026 (hors ligne inclus)", url };
+    const data = { title:"Ma Tech by Kevin", text:"Ma Tech by Kevin — 21 000 fiches DTC, pannes connues/TSB & rappels 2017-2026 (hors ligne inclus)", url };
     try{
       if (navigator.share){ await navigator.share(data); toast("✅ Lien partagé"); }
       else { await navigator.clipboard.writeText(url); toast("🔗 Lien copié : " + url); }
@@ -83,20 +84,32 @@ const App = {
     </nav>
     ${role==='tier'?'<div style="background:#102a3a;color:#5ec1ff;text-align:center;padding:.35rem;font-size:.8rem">Mode accès tiers — consultation seule • mises à jour reçues automatiquement</div>':''}
     <main>${body}</main>
-    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — 21 000 fiches DTC + pannes par système + rappels — motorisations & puissances réelles 2017 → 2026</div>`;
+    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — 21 000 fiches DTC + pannes connues/TSB + rappels — motorisations & puissances réelles 2017 → 2026</div>`;
     App.updateNet();
     App.bindView();
   },
 
+  /* ---- LOGIN : aucun mot de passe pré-enregistré visible ---- */
   renderLogin(){
+    const setup = !Auth.hasAdmin();
     $("#app").innerHTML = `
     <div class="login-wrap"><div class="card login-box">
       <div class="logo" style="font-size:1.4rem;margin-bottom:.3rem">⚙️ Ma Tech <span>by Kevin</span></div>
-      <p class="muted" style="margin-bottom:1rem">21 000 fiches + pannes par système + rappels • 2017-2026 • hors ligne</p>
-      <label>Identifiant (administrateur)</label><input id="l-user" autocomplete="username">
-      <label>Mot de passe</label><input id="l-pass" type="password" autocomplete="current-password">
-      <div style="margin-top:.8rem"><button class="btn" id="l-admin" style="width:100%">Connexion administrateur</button></div>
-      <div class="err-msg" id="l-err"></div>
+      <p class="muted" style="margin-bottom:1rem">21 000 fiches + pannes connues/TSB + rappels • 2017-2026 • hors ligne</p>
+      ${setup ? `
+        <h3>🔐 Première utilisation — définir le mot de passe administrateur</h3>
+        <label>Identifiant administrateur</label><input id="s-user" autocomplete="username" placeholder="admin">
+        <label>Mot de passe (6 caractères min)</label><input id="s-pass" type="password" autocomplete="new-password">
+        <label>Confirmation</label><input id="s-conf" type="password" autocomplete="new-password">
+        <div style="margin-top:.8rem"><button class="btn" id="s-go" style="width:100%">Créer et ouvrir la session</button></div>
+        <div class="err-msg" id="s-err"></div>
+        <p class="muted" style="margin-top:.6rem">Aucun mot de passe n'est pré-enregistré : il sera demandé à chaque utilisation, ou mémorisable sur cet appareil.</p>`
+      : `
+        <label>Identifiant administrateur</label><input id="l-user" autocomplete="username">
+        <label>Mot de passe</label><input id="l-pass" type="password" autocomplete="current-password">
+        <label class="row" style="margin-top:.5rem;font-size:.82rem;color:var(--txt)"><input type="checkbox" id="l-rem" style="width:auto"> Se souvenir sur cet appareil (PC / téléphone)</label>
+        <div style="margin-top:.8rem"><button class="btn" id="l-admin" style="width:100%">Connexion administrateur</button></div>
+        <div class="err-msg" id="l-err"></div>`}
       <hr style="border-color:var(--bd);margin:1rem 0">
       <label>Code d'accès tiers (lecture seule)</label><input id="l-code" placeholder="TIER-XXXXXX" style="text-transform:uppercase">
       <div style="margin-top:.8rem"><button class="btn sec" id="l-tier" style="width:100%">Accéder en mode tiers</button></div>
@@ -108,10 +121,21 @@ const App = {
       </div>
     </div></div>`;
     App.updateNet();
-    $("#l-admin").onclick = async () => {
-      if (await Auth.loginAdmin($("#l-user").value, $("#l-pass").value)){ location.hash = "#/search"; App.route(); }
-      else $("#l-err").textContent = "Identifiants administrateur incorrects.";
-    };
+    if (setup){
+      $("#s-go").onclick = async () => {
+        const p = $("#s-pass").value, c = $("#s-conf").value;
+        if (p.length < 6) return $("#s-err").textContent = "6 caractères minimum.";
+        if (p !== c) return $("#s-err").textContent = "Confirmation différente.";
+        await Auth.setupAdmin($("#s-user").value.trim() || "admin", p);
+        location.hash = "#/search"; App.route();
+      };
+    } else {
+      $("#l-admin").onclick = async () => {
+        const ok = await Auth.loginAdmin($("#l-user").value.trim(), $("#l-pass").value, $("#l-rem").checked);
+        if (ok){ location.hash = "#/search"; App.route(); }
+        else $("#l-err").textContent = "Identifiants incorrects.";
+      };
+    }
     $("#l-tier").onclick = () => {
       if (Auth.loginTier($("#l-code").value)){ location.hash = "#/search"; App.route(); }
       else $("#l-err2").textContent = "Code tiers invalide, inactif ou expiré.";
@@ -120,10 +144,10 @@ const App = {
 
   renderSearch(){
     return `
-    <div class="card"><h1>Recherche automatique pannes + rappels</h1>
-      <p class="muted">Code DTC, texte libre, marque, modèle ou motorisation.</p>
+    <div class="card"><h1>Recherche automatique pannes + rappels + bulletins</h1>
+      <p class="muted">Code DTC, texte libre, marque, modèle, motorisation ou symptôme (chaîne, AdBlue, ressorts…).</p>
       <div class="row" style="margin-top:.7rem">
-        <input id="q" placeholder="P0420, airbag, 1.2 PureTech, Clio VI…" style="flex:1;min-width:200px">
+        <input id="q" placeholder="P0420, chaîne 1.5 HDI, AdBlue, ressorts Bigster…" style="flex:1;min-width:200px">
         <button class="btn" data-act="search-go">Rechercher</button>
       </div></div>
     <div class="card"><h3>📶 Connexion, partage & sauvegarde locale</h3>
@@ -133,16 +157,27 @@ const App = {
       <p class="muted" style="margin-top:.5rem">4G/5G/Wi‑Fi et <b>hors ligne</b> : base et modifications enregistrées localement.</p></div>
     <div class="grid g4">
       <div class="card stat"><b>21 000</b>fiches DTC</div>
+      <div class="card stat"><b>${TSB.all().length}</b>pannes connues/TSB</div>
       <div class="card stat"><b>${Recalls.all().length}</b>rappels</div>
       <div class="card stat"><b>${BRANDS.length}</b>marques classées</div>
-      <div class="card stat"><b>2017-2026</b>motorisations réelles</div>
     </div>
-    <div id="results"></div><div id="recall-results"></div>`;
+    <div id="tsb-results"></div><div id="results"></div><div id="recall-results"></div>`;
   },
 
   doSearch(){
     const q = $("#q").value.trim();
     if (!q) return;
+    /* 1) bulletins / pannes connues */
+    const tsbs = TSB.search(q);
+    $("#tsb-results").innerHTML = tsbs.length ? `
+      <div class="card"><h3>📚 Pannes connues & bulletins (${tsbs.length})</h3>
+      <table><thead><tr><th>Source</th><th>Réf.</th><th>Marques</th><th>Composant / problème</th><th>Sév.</th></tr></thead><tbody>
+      ${tsbs.map(t=>`<tr data-act="open-tsb" data-id="${esc(t.id)}" style="cursor:pointer">
+        <td><span class="tag b">${esc(TSB.SRC[t.src]||t.src)}</span></td><td class="muted">${esc(t.ref)}</td>
+        <td>${esc(t.brands.slice(0,3).join(", "))}</td><td><b>${esc(t.comp)}</b> — ${esc(t.prob.slice(0,60))}</td>
+        <td><span class="sev s${t.sev}"></span></td></tr>`).join("")}
+      </tbody></table></div>` : "";
+    /* 2) codes DTC */
     let keys = [];
     if (/^[pbcu][0-3]/i.test(q)){
       keys = DT.findByCode(q).map(e => e.key);
@@ -163,6 +198,7 @@ const App = {
     }
     App.state.list = keys.slice(0, 500); App.state.page = 0;
     $("#results").innerHTML = App.listHTML(App.state.list, "fiche(s) panne — 500 max");
+    /* 3) rappels */
     const recs = Recalls.search(q.toLowerCase());
     $("#recall-results").innerHTML = recs.length ? `
       <div class="card"><h3>📢 Rappels correspondants (${recs.length})</h3>
@@ -172,6 +208,27 @@ const App = {
         <td>${esc(r.comp)}</td><td class="muted">${r.y0}-${r.y1}</td>
         <td>${r.status==='open'?'<span style="color:var(--warn)">ouverte</span>':'<span class="muted">clôturée</span>'}</td></tr>`).join("")}
       </tbody></table></div>` : "";
+  },
+
+  openTsb(id){
+    const t = TSB.byId(id); if (!t) return;
+    const bg = document.createElement("div"); bg.className = "modal-bg";
+    bg.innerHTML = `<div class="modal"><div class="row"><span class="tag b">${esc(TSB.SRC[t.src]||t.src)}</span>
+      <span class="code">${esc(t.id)}</span><span class="muted">${esc(t.ref)}</span>
+      <span class="tag"><span class="sev s${t.sev}"></span>${["Mineure","Modérée","Sérieuse","Critique"][t.sev-1]}</span>
+      <div class="spacer"></div><button class="btn sec small" data-act="modal-close">Fermer</button></div>
+      <h2 style="margin-top:.6rem">${esc(t.comp)}</h2>
+      <p style="margin-top:.4rem"><b>Problème connu :</b> ${esc(t.prob)}</p>
+      <p><b>Symptômes :</b> ${esc(t.sym.join(" • "))}</p>
+      <p><b>Solution / bulletin :</b> ${esc(t.fix)}</p>
+      <div class="grid g2" style="margin-top:.8rem">
+        <div><h3>Marques / modèles</h3><div style="margin-top:.3rem">${t.brands.map(x=>`<span class="tag b">${esc(x)}</span>`).join("")}
+          ${(t.models&&t.models.length)?t.models.map(x=>`<span class="tag">${esc(x)}</span>`).join(""):'<span class="muted">tous modèles</span>'}</div></div>
+        <div><h3>Motorisations / années</h3><div style="margin-top:.3rem">${(t.eng&&t.eng.length)?t.eng.map(x=>`<span class="tag">⚙️ ${esc(x)}</span>`).join(""):'<span class="muted">toutes</span>'}
+          <span class="tag">${t.y0} → ${t.y1}</span></div></div></div>
+      ${t.dtc.length?`<div style="margin-top:.8rem"><h3>Codes DTC associés</h3><div style="margin-top:.3rem">${t.dtc.map(c=>`<button class="btn sec small" style="margin:.1rem" data-act="open-fiche" data-key="${esc(c)}">${esc(c)}</button>`).join("")}</div></div>`:''}
+    </div>`;
+    document.body.appendChild(bg);
   },
 
   renderCodes(){
@@ -227,7 +284,6 @@ const App = {
     <table><thead><tr><th>Code</th><th>Description</th><th>Sév.</th><th>Marques</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
   },
 
-  /* ---------- VÉHICULES : catégories → marque → modèle → motorisation réelle ---------- */
   renderVeh(){
     const S = App.state;
     const cats = [["","Toutes"],["FR","Françaises"],["EU","Européennes"],["US","Américaines"],["AS","Asiatiques"]];
@@ -236,7 +292,7 @@ const App = {
       const list = BRANDS.filter(x => !S.vehCat || x.o === S.vehCat);
       return `<div class="card"><h1>Toutes les marques 2017-2026</h1>
         <div class="row" style="margin-top:.5rem">${cats.map(c=>`<button class="btn ${S.vehCat===c[0]?'':'sec'} small" data-act="veh-cat" data-cat="${c[0]}">${c[1]}</button>`).join("")}</div>
-        <p class="muted" style="margin-top:.5rem">Marque → modèle → motorisation précise : pannes DTC, pannes détaillées par système et rappels appliqués automatiquement.</p></div>
+        <p class="muted" style="margin-top:.5rem">Marque → modèle → motorisation : DTC + pannes connues/TSB + rappels appliqués automatiquement.</p></div>
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">
         ${list.map(x=>`<div class="card" style="cursor:pointer;margin:0" data-act="veh-brand" data-brand="${esc(x.n)}">
           <h3>${esc(x.n)}</h3><div class="muted">${CATS[x.o]} • ${x.models.length} modèles</div></div>`).join("")}
@@ -254,7 +310,7 @@ const App = {
     if (!S.vehEngine){
       return `<div class="card"><div class="row"><h1>${esc(b.n)} ${esc(model.name)}</h1><div class="spacer"></div>
         <button class="btn sec small" data-act="veh-reset" data-level="models">← Modèles</button></div>
-        <p class="muted">Millésimes ${model.y0} → 2026 — motorisations & puissances réelles identifiées :</p></div>
+        <p class="muted">Millésimes ${model.y0} → 2026 — motorisations & puissances réelles :</p></div>
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">
         ${model.engines.map(e=>`<div class="card" style="cursor:pointer;margin:0" data-act="veh-engine" data-engine="${esc(e)}">
           <h3>⚙️ ${esc(e)}</h3><span class="tag b">${esc(DT.fuelOf(e))}</span> <span class="tag">${Recalls.powerOf(e)||"—"} ch</span></div>`).join("")}
@@ -263,20 +319,26 @@ const App = {
     const modelKey = model.name + "|" + model.y0;
     const res = DT.faultsForVehicle(b.n, modelKey, S.vehEngine);
     const recs = Recalls.forVehicle(b.n, modelKey, S.vehEngine);
+    const tsbs = TSB.forVehicle(b.n, model.name, model.y0, S.vehEngine);
     const sysF = systemFaultsFor(b.n, modelKey, S.vehEngine);
     const groups = {};
     sysF.forEach(f => { (groups[f.sys] = groups[f.sys] || []).push(f); });
     return `
     <div class="card"><div class="row" style="flex-wrap:wrap">
       <h1>${esc(b.n)} ${esc(model.name)}</h1>
-      <span class="tag b">${esc(S.vehEngine)}</span>
-      <span class="tag">${esc(res.fuel)}</span>
-      <span class="tag">${Recalls.powerOf(S.vehEngine)||"—"} ch</span>
-      <span class="tag">${model.y0} → 2026</span>
-      <div class="spacer"></div>
-      <button class="btn sec small" data-act="veh-reset" data-level="engines">← Motorisations</button>
+      <span class="tag b">${esc(S.vehEngine)}</span><span class="tag">${esc(res.fuel)}</span>
+      <span class="tag">${Recalls.powerOf(S.vehEngine)||"—"} ch</span><span class="tag">${model.y0} → 2026</span>
+      <div class="spacer"></div><button class="btn sec small" data-act="veh-reset" data-level="engines">← Motorisations</button>
     </div>
-    <p class="muted" style="margin-top:.4rem"><b>${res.faults.length}</b> codes DTC connus • <b>${sysF.length}</b> pannes détaillées par système • <b>${recs.length}</b> rappel(s).</p></div>
+    <p class="muted" style="margin-top:.4rem"><b>${res.faults.length}</b> DTC • <b>${tsbs.length}</b> panne(s) connue(s)/TSB • <b>${sysF.length}</b> pannes système • <b>${recs.length}</b> rappel(s).</p></div>
+    ${tsbs.length ? `<div class="card"><h3>📚 Pannes connues & bulletins techniques (TSB / NHTSA / Safety Gate / RappelConso)</h3>
+      <table><thead><tr><th>Source</th><th>Réf.</th><th>Composant / problème</th><th>Symptômes</th><th>Solution</th><th>Sév.</th></tr></thead><tbody>
+      ${tsbs.map(t=>`<tr data-act="open-tsb" data-id="${esc(t.id)}" style="cursor:pointer">
+        <td><span class="tag b">${esc(TSB.SRC[t.src]||t.src)}</span></td><td class="muted">${esc(t.ref)}</td>
+        <td><b>${esc(t.comp)}</b><div class="muted">${esc(t.prob.slice(0,70))}</div></td>
+        <td class="muted">${esc(t.sym.slice(0,2).join(" • "))}</td><td class="muted">${esc(t.fix.slice(0,60))}</td>
+        <td><span class="sev s${t.sev}"></span></td></tr>`).join("")}
+      </tbody></table></div>` : `<div class="card muted">Aucune panne connue/TSB référencée pour cette configuration.</div>`}
     ${recs.length ? `<div class="card"><h3>📢 Campagnes de rappels applicables</h3>
       <table><thead><tr><th>Référence</th><th>Composant</th><th>Risque</th><th>Période</th><th>Statut</th></tr></thead><tbody>
       ${recs.map(r=>`<tr data-act="open-rappel" data-id="${esc(r.id)}" style="cursor:pointer">
@@ -375,6 +437,7 @@ const App = {
       <div class="spacer"></div>
       <select id="a-tab" style="max-width:240px">
         <option value="customs">Fiches personnalisées</option>
+        <option value="tsb">📚 Pannes connues / TSB</option>
         <option value="recalls">Rappels personnalisés</option>
         <option value="update">📦 Mise à jour APK</option>
         <option value="tiers">Accès tiers</option>
@@ -397,6 +460,38 @@ const App = {
         ${ovs.length?ovs.map(k=>`<span class="tag b">${esc(k)}</span>`).join(""):'<p class="muted">Aucune surcharge.</p>'}</div>`;
       B.querySelectorAll("[data-ce]").forEach(b => b.onclick = () => App.openEditor(Store.customs()[+b.dataset.ce]));
       B.querySelectorAll("[data-cd]").forEach(b => b.onclick = () => { if (confirm("Supprimer ?")){ Store.removeCustom(+b.dataset.cd); App.adminTab("customs"); }});
+    }
+    if (t === "tsb"){
+      const list = TSB.customs();
+      B.innerHTML = `<div class="card"><h3>Ajouter une panne connue / bulletin</h3>
+        <div class="grid g2">
+          <div><label>Source</label><select id="tb-src">${Object.keys(TSB.SRC).map(k=>`<option value="${k}">${TSB.SRC[k]}</option>`).join("")}</select></div>
+          <div><label>Référence</label><input id="tb-ref"></div>
+          <div><label>Marque</label><select id="tb-brand">${BRANDS.map(b=>`<option>${esc(b.n)}</option>`).join("")}</select></div>
+          <div><label>Modèles (virgule, vide = tous)</label><input id="tb-models"></div>
+          <div><label>Motorisations (virgule : 1.5 hdi, 1.2 puretech…)</label><input id="tb-eng"></div>
+          <div><label>Années</label><div class="row"><input id="tb-y0" type="number" value="2017"><input id="tb-y1" type="number" value="2026"></div></div>
+        </div>
+        <label>Composant</label><input id="tb-comp"><label>Problème connu</label><textarea id="tb-prob" rows="2"></textarea>
+        <label>Symptômes (virgule)</label><input id="tb-sym"><label>Solution / bulletin</label><input id="tb-fix">
+        <label>Codes DTC (virgule)</label><input id="tb-dtc">
+        <button class="btn" id="tb-add" style="margin-top:.7rem">Ajouter</button><div id="tb-msg"></div></div>
+      <div class="card"><h3>Entrées personnalisées (${list.length})</h3>
+        ${list.length?`<table><tbody>${list.map((x,i)=>`<tr><td class="code">${esc(x.id)}</td><td>${esc(x.comp)}</td>
+          <td><button class="btn small danger" data-td="${i}">🗑️</button></td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucune.</p>'}</div>`;
+      $("#tb-add").onclick = () => {
+        const e = { id:"TSB-CUST-" + Date.now().toString(36).toUpperCase(), src:$("#tb-src").value, ref:$("#tb-ref").value.trim()||"réf. perso",
+          brands:[$("#tb-brand").value], models:$("#tb-models").value.split(",").map(x=>x.trim()).filter(Boolean),
+          eng:$("#tb-eng").value.split(",").map(x=>x.trim()).filter(Boolean), fuels:[],
+          y0:+$("#tb-y0").value, y1:+$("#tb-y1").value, comp:$("#tb-comp").value.trim()||"Composant",
+          prob:$("#tb-prob").value.trim()||"Problème connu", sym:$("#tb-sym").value.split(",").map(x=>x.trim()).filter(Boolean),
+          fix:$("#tb-fix").value.trim()||"Voir bulletin", dtc:$("#tb-dtc").value.split(",").map(x=>x.trim().toUpperCase()).filter(Boolean), sev:3 };
+        const l = TSB.customs(); l.unshift(e); TSB.saveCustoms(l);
+        Store.audit("CREER_TSB", e.id);
+        $("#tb-msg").innerHTML = '<div class="ok-msg">Ajoutée (publiez la mise à jour pour diffusion).</div>';
+        setTimeout(() => App.adminTab("tsb"), 1200);
+      };
+      B.querySelectorAll("[data-td]").forEach(b => b.onclick = () => { if (confirm("Supprimer ?")){ const l = TSB.customs(); l.splice(+b.dataset.td,1); TSB.saveCustoms(l); App.adminTab("tsb"); }});
     }
     if (t === "recalls"){
       const list = Recalls.customs();
@@ -477,11 +572,11 @@ const App = {
         ${tiers.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.expires?esc(x.expires):"∞"}</td>
           <td>${x.active?'<span style="color:var(--ok)">actif</span>':'<span style="color:var(--err)">inactif</span>'}</td>
           <td><button class="btn small sec" data-tt="${esc(x.code)}">${x.active?"Désactiver":"Activer"}</button>
-          <button class="btn small danger" data-td="${esc(x.code)}">🗑️</button></td></tr>`).join("")}</tbody></table></div>`;
+          <button class="btn small danger" data-td2="${esc(x.code)}">🗑️</button></td></tr>`).join("")}</tbody></table></div>`;
       $("#t-add").onclick = () => { const code = Auth.addTier($("#t-name").value || "Accès tiers", $("#t-exp").value || null);
         $("#t-new").innerHTML = `<div class="ok-msg">Code : <b class="code">${code}</b></div>`; setTimeout(() => App.adminTab("tiers"), 1500); };
       B.querySelectorAll("[data-tt]").forEach(b => b.onclick = () => { Auth.toggleTier(b.dataset.tt); App.adminTab("tiers"); });
-      B.querySelectorAll("[data-td]").forEach(b => b.onclick = () => { if (confirm("Supprimer ?")){ Auth.removeTier(b.dataset.td); App.adminTab("tiers"); }});
+      B.querySelectorAll("[data-td2]").forEach(b => b.onclick = () => { if (confirm("Supprimer ?")){ Auth.removeTier(b.dataset.td2); App.adminTab("tiers"); }});
     }
     if (t === "audit"){
       const log = Store.read(CONFIG.K.audit, []);
@@ -494,13 +589,16 @@ const App = {
       B.innerHTML = `<div class="card" style="max-width:440px"><h3>Changer le mot de passe admin</h3>
         <label>Actuel</label><input type="password" id="s-cur"><label>Nouveau</label><input type="password" id="s-new">
         <label>Confirmation</label><input type="password" id="s-conf">
-        <button class="btn" id="s-go" style="margin-top:.7rem">Changer</button><div id="s-msg"></div></div>`;
+        <button class="btn" id="s-go" style="margin-top:.7rem">Changer</button>
+        <button class="btn sec" id="s-forget" style="margin-top:.7rem">Oublier cet appareil</button>
+        <div id="s-msg"></div></div>`;
       $("#s-go").onclick = async () => {
         if ($("#s-new").value !== $("#s-conf").value) return $("#s-msg").innerHTML = '<div class="err-msg">Confirmation différente.</div>';
         if ($("#s-new").value.length < 6) return $("#s-msg").innerHTML = '<div class="err-msg">6 caractères min.</div>';
         const ok = await Auth.changePassword($("#s-cur").value, $("#s-new").value);
         $("#s-msg").innerHTML = ok ? '<div class="ok-msg">Modifié.</div>' : '<div class="err-msg">Actuel incorrect.</div>';
       };
+      $("#s-forget").onclick = () => { Auth.forgetDevice(); $("#s-msg").innerHTML = '<div class="ok-msg">Mémorisation supprimée.</div>'; };
     }
   },
   bindAdmin(){
@@ -510,7 +608,7 @@ const App = {
       const data = { version: CONFIG.VERSION, exported: new Date().toISOString(),
         overrides: JSON.parse(localStorage.getItem(CONFIG.K.overrides) || "{}"),
         customs: Store.customs(), deleted: Store.read(CONFIG.K.deleted, []),
-        recalls: Recalls.customs(), tiers: Auth.tiers() };
+        recalls: Recalls.customs(), tsb: TSB.customs(), tiers: Auth.tiers() };
       Updater.download("ma-tech-by-kevin-sauvegarde-" + Date.now() + ".json", data);
       Store.audit("EXPORT", "sauvegarde");
     };
@@ -521,6 +619,7 @@ const App = {
         if (d.customs) localStorage.setItem(CONFIG.K.customs, JSON.stringify(d.customs));
         if (d.deleted) localStorage.setItem(CONFIG.K.deleted, JSON.stringify(d.deleted));
         if (d.recalls) Recalls.saveCustoms(d.recalls);
+        if (d.tsb) TSB.saveCustoms(d.tsb);
         if (d.tiers) Auth.saveTiers(d.tiers);
         Store.audit("IMPORT", "import"); alert("Import réussi."); App.route();
       }catch(err){ alert("JSON invalide."); } };
@@ -582,7 +681,7 @@ document.addEventListener("click", e => {
   const S = App.state;
   switch (el.dataset.act){
     case "nav": navigate("#/" + el.dataset.view); break;
-    case "logout": Auth.logout(); location.hash = ""; App.renderLogin(); break;
+    case "logout": Auth.forgetDevice(); Auth.logout ? Auth.logout() : Session.clear(); location.hash = ""; App.renderLogin(); break;
     case "share": App.doShare(); break;
     case "install": App.doInstall(); break;
     case "search-go": App.doSearch(); break;
@@ -592,6 +691,7 @@ document.addEventListener("click", e => {
     case "page-next": S.page++; App.renderPage(); break;
     case "open-fiche": navigate("#/fiche/" + encodeURIComponent(el.dataset.key)); break;
     case "open-rappel": navigate("#/rappel/" + encodeURIComponent(el.dataset.id)); break;
+    case "open-tsb": App.openTsb(el.dataset.id); break;
     case "back": history.back(); break;
     case "veh-cat": S.vehCat = el.dataset.cat; S.vehBrand = ""; S.vehModel = ""; S.vehEngine = ""; App.route(); break;
     case "veh-brand": S.vehBrand = el.dataset.brand; S.vehModel = ""; S.vehEngine = ""; App.route(); break;
