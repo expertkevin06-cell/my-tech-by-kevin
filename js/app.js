@@ -4,7 +4,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const isAdmin=()=>Session.role()==="admin";
 function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.classList.add("show"),10); setTimeout(()=>{t.classList.remove("show"); setTimeout(()=>t.remove(),300);},3800); }
 function navigate(h){ if(location.hash===h) App.route(); else location.hash=h; }
-function mailto(to, subject, body){ location.href="mailto:"+(to||"")+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body); }
+function mailto(to,subject,body){ location.href="mailto:"+(to||"")+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body); }
 function fatal(err){ console.error(err); const b=document.getElementById("boot-error"); if(b){ b.style.display="block"; const m=b.querySelector("#be-msg"); if(m) m.textContent=(err&&err.message)||String(err); } }
 window.addEventListener("error", e=>fatal(e.error||e.message));
 window.addEventListener("unhandledrejection", e=>fatal(e.reason));
@@ -16,12 +16,13 @@ const App = {
     try{
       await Auth.init();
       Veille.mergeModels();
+      Wallpaper.apply();
       if(!Session.get() && await Auth.autoLogin()){}
       window.addEventListener("hashchange", ()=>App.route());
       window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); App.deferredPrompt=e; });
       window.addEventListener("online", ()=>{ App.updateNet(); toast("🌐 Connexion rétablie"); });
       window.addEventListener("offline", ()=>{ App.updateNet(); toast("⛔ Hors ligne — mode local"); });
-      Updater.checkAndApply().then(r=>{ if(r.ok) toast("✅ MAJ v"+r.version+" appliquée"); }).catch(()=>{});
+      Updater.checkAndApply().then(r=>{ if(r.ok){ toast("✅ MAJ v"+r.version+" appliquée"); Wallpaper.apply(); } }).catch(()=>{});
       if (Veille.due()) Veille.check().then(r=>{ if(r.ok&&r.count&&isAdmin()) toast("🛰️ Veille 15 j : "+r.count+" nouveauté(s) à approuver"); }).catch(()=>{});
       App.route();
       const st=await SelfTest.run(); const bad=SelfTest.failures();
@@ -33,7 +34,7 @@ const App = {
   async doShare(){ const url=location.origin+location.pathname; try{ if(navigator.share){ await navigator.share({title:"Ma Tech by Kevin",url}); toast("✅ Lien partagé"); } else { await navigator.clipboard.writeText(url); toast("🔗 Lien copié"); } }catch(e){ toast("Partage annulé"); } },
   doShareMail(){ mailto("", "Ma Tech by Kevin — application diagnostic automobile",
       "Bonjour,\n\nDécouvrez Ma Tech by Kevin : 21 000 fiches DTC, pannes connues/TSB, campagnes de rappels, motorisations 2017-2026, utilisable hors ligne.\n\nLien : "+location.origin+location.pathname+
-      "\n\nPour un accès tiers : ouvrez l'application → écran de connexion → « Demander un accès » (une référence REQ-xxxx vous sera fournie).\n\nCordialement."); toast("📧 Mail préparé"); },
+      "\n\nPour un accès tiers : ouvrez l'application → écran de connexion → « Demander un accès » (référence REQ-xxxx fournie).\n\nCordialement."); toast("📧 Mail préparé"); },
   async doInstall(){ if(App.deferredPrompt){ App.deferredPrompt.prompt(); const r=await App.deferredPrompt.userChoice; toast(r.outcome==="accepted"?"📥 Installation lancée":"Annulé"); App.deferredPrompt=null; } else toast("ℹ️ Menu navigateur → Installer"); },
   route(){
     try{
@@ -64,7 +65,7 @@ const App = {
       ${isAdmin()?'<button type="button" data-act="nav" data-view="admin" class="'+(App.state.view==='admin'?'active':'')+'">🛠️ Admin'+(pend?' ('+pend+')':'')+'</button>':''}
     </nav>
     <main>${body}</main>
-    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — admin : mot de passe unique — veille 15 j — PDF & partage mail — 2017 → 2026</div>`;
+    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — fond d'écran personnalisable (admin) — veille 15 j — PDF & mail — 2017 → 2026</div>`;
     App.updateNet(); App.bindView();
   },
   renderLogin(){
@@ -81,7 +82,7 @@ const App = {
       <label>Code d'accès reçu</label><input id="l-code" placeholder="TIER-XXXXXX" style="text-transform:uppercase">
       <div class="row" style="margin-top:.6rem"><button class="btn sec" id="l-tier" style="flex:1">Accéder</button>
       <button class="btn sec" id="l-req" style="flex:1">📧 Demander un accès</button></div>
-      <div class="err-msg" id="l-err2"></div><div class="ok-msg" id="l-ok2"></div>
+      <div class="err-msg" id="l-err2"></div>
       <div class="row" style="margin-top:1rem;justify-content:center"><span class="tag" id="netbadge"></span>
         <button class="btn sec small" data-act="share-mail">📧 Mail</button><button class="btn sec small" data-act="install">📥 Installer</button></div>
     </div></div>`;
@@ -94,31 +95,27 @@ const App = {
   openRequest(){
     const bg=document.createElement("div"); bg.className="modal-bg";
     bg.innerHTML=`<div class="modal"><h2>📧 Demande d'accès tiers</h2>
-      <p class="muted">Le mot de passe administrateur n'est jamais communiqué. Votre demande est transmise par mail à l'administrateur qui décidera de vous délivrer un code d'accès.</p>
+      <p class="muted">Le mot de passe administrateur n'est jamais communiqué. Votre demande part par mail à l'administrateur qui décidera de vous délivrer un code.</p>
       <label>Votre nom / société</label><input id="rq-name">
       <label>Votre mail ou téléphone</label><input id="rq-contact">
-      <label>Motif de la demande</label><textarea id="rq-msg" rows="3"></textarea>
-      <div class="row" style="justify-content:flex-end;margin-top:.8rem"><button class="btn sec" data-act="modal-close">Annuler</button><button class="btn" id="rq-send">Envoyer la demande</button></div>
+      <label>Motif</label><textarea id="rq-msg" rows="3"></textarea>
+      <div class="row" style="justify-content:flex-end;margin-top:.8rem"><button class="btn sec" data-act="modal-close">Annuler</button><button class="btn" id="rq-send">Envoyer</button></div>
       <div id="rq-out"></div></div>`;
     document.body.appendChild(bg);
     bg.querySelector("#rq-send").onclick=()=>{
       const name=bg.querySelector("#rq-name").value.trim(), contact=bg.querySelector("#rq-contact").value.trim();
       if(!name||!contact) return bg.querySelector("#rq-out").innerHTML='<div class="err-msg">Nom et contact requis.</div>';
-      const ref=Auth.addRequest({ name, contact, msg:bg.querySelector("#rq-msg").value.trim() });
-      mailto(CONFIG.ADMIN_EMAIL, "Demande d'accès Ma Tech by Kevin "+ref,
-        "Nouvelle demande d'accès tiers\nRéférence : "+ref+"\nNom : "+name+"\nContact : "+contact+"\nMotif : "+(bg.querySelector("#rq-msg").value.trim()||"-")+"\nAppareil : "+(navigator.userAgent||"").slice(0,120));
-      bg.querySelector("#rq-out").innerHTML='<div class="ok-msg">Demande enregistrée — référence <b>'+ref+'</b>. Un mail pré-rempli vient de s'+"'"+'ouvrir ; après validation, l'+"'"+'admin vous enverra votre code TIER.</div>';
+      const ref=Auth.addRequest({name,contact,msg:bg.querySelector("#rq-msg").value.trim()});
+      mailto(CONFIG.ADMIN_EMAIL,"Demande d'accès Ma Tech by Kevin "+ref,"Nouvelle demande d'accès tiers\nRéférence : "+ref+"\nNom : "+name+"\nContact : "+contact+"\nMotif : "+(bg.querySelector("#rq-msg").value.trim()||"-"));
+      bg.querySelector("#rq-out").innerHTML='<div class="ok-msg">Demande enregistrée — référence <b>'+ref+'</b>. Mail pré-rempli ouvert.</div>';
     };
   },
   fichePDF(key){ const f=resolveFiche(key); if(!f) return;
     PDF.download("fiche-"+f.code+".pdf", f.code+" — "+f.title, [
-      {h:"Description", lines:[f.desc]},
-      {h:"Symptômes", lines:f.symptoms||[]},
-      {h:"Causes probables", lines:f.causes||[]},
-      {h:"Solutions / contrôles", lines:f.solutions||[]},
-      {h:"Véhicules concernés", lines:[(f.brands||[]).join(", "), "Motorisations : "+(f.motors||[]).join(", ")], },
-      {h:"Métadonnées", lines:["Sévérité : "+f.sevLabel, "Millésimes : "+f.years, "Source : Ma Tech by Kevin v"+CONFIG.VERSION]}
-    ]); toast("📄 PDF généré"); },
+      {h:"Description",lines:[f.desc]},{h:"Symptômes",lines:f.symptoms||[]},{h:"Causes probables",lines:f.causes||[]},
+      {h:"Solutions / contrôles",lines:f.solutions||[]},{h:"Véhicules concernés",lines:[(f.brands||[]).join(", "),"Motorisations : "+(f.motors||[]).join(", ")]},
+      {h:"Métadonnées",lines:["Sévérité : "+f.sevLabel,"Millésimes : "+f.years,"Source : Ma Tech by Kevin v"+CONFIG.VERSION]} ]);
+    toast("📄 PDF généré"); },
   renderDiag(){ const rows=SelfTest.last().map(r=>`<tr><td>${r.ok?"✅":"❌"}</td><td>${esc(r.name)}</td><td class="muted">${esc(r.detail||"")}</td></tr>`).join("");
     return `<div class="card"><h1>🩺 Autocontrôle</h1><div class="row"><button class="btn" data-act="diag-run">Relancer</button><button class="btn sec" data-act="diag-clearsw">Vider cache SW</button></div>
       <table style="margin-top:.8rem"><thead><tr><th>État</th><th>Test</th><th>Détail</th></tr></thead><tbody>${rows||'<tr><td colspan=3>Lancez les tests.</td></tr>'}</tbody></table></div>`; },
@@ -168,11 +165,27 @@ const App = {
       <div class="card"><h3>🔧 Causes</h3><ul style="padding-left:1.2rem">${(f.causes||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div></div>
       <div class="card"><h3>✅ Solutions</h3><ol style="padding-left:1.4rem">${(f.solutions||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>`; },
   renderAdmin(){ return `<div class="row" style="margin-bottom:1rem"><button class="btn small" id="a-new">➕ Fiche</button><button class="btn sec small" id="a-export">⬇️ Export</button><button class="btn sec small" data-act="nav" data-view="diag">🩺 Autocontrôle</button><div class="spacer"></div>
-    <select id="a-tab" style="max-width:220px"><option value="veille">🛰️ Veille 15 j</option><option value="customs">Fiches perso</option><option value="tsb">📚 TSB perso</option><option value="recalls">Rappels perso</option><option value="update">📦 MAJ APK</option><option value="tiers">Tiers & demandes</option><option value="audit">Audit</option><option value="secu">Sécurité</option></select></div><div id="a-body"></div>`; },
+    <select id="a-tab" style="max-width:230px"><option value="veille">🛰️ Veille 15 j</option><option value="wallpaper">🖼️ Fond d'écran</option><option value="customs">Fiches perso</option><option value="tsb">📚 TSB perso</option><option value="recalls">Rappels perso</option><option value="update">📦 MAJ APK</option><option value="tiers">Tiers & demandes</option><option value="audit">Audit</option><option value="secu">Sécurité</option></select></div><div id="a-body"></div>`; },
   adminTab(t){ const B=$("#a-body");
+    if(t==="wallpaper"){ const cur=Wallpaper.get();
+      B.innerHTML=`<div class="card"><h3>🖼️ Fond d'écran personnalisé (admin)</h3>
+        <p class="muted">Choisissez une photo : elle est compressée (1920×1080 max, JPEG), appliquée immédiatement, sauvegardée localement et <b>incluse dans la prochaine mise à jour</b> pour diffusion aux tiers.</p>
+        <div class="row"><input type="file" id="w-file" accept="image/*" style="flex:1"><button class="btn" id="w-up">Appliquer</button></div>
+        <div class="row" style="margin-top:.6rem"><button class="btn sec" id="w-reset">Réinitialiser (véhicule sportif)</button></div>
+        <div id="w-msg" style="margin-top:.6rem"></div>
+        <div style="margin-top:.8rem;height:170px;border:1px solid var(--bd);border-radius:10px;background:${cur?`url('${cur}')`:'url(assets/img/bg-car.svg)'} center/cover no-repeat"></div>
+        <p class="muted" style="margin-top:.4rem">Actuel : <b>${cur?"photo personnalisée":"véhicule sportif par défaut"}</b></p></div>`;
+      $("#w-up").onclick=async()=>{ const f=$("#w-file").files[0]; if(!f) return $("#w-msg").innerHTML='<div class="err-msg">Choisissez une image.</div>';
+        try{ const d=await Wallpaper.fromFile(f);
+          if(Wallpaper.set(d)) $("#w-msg").innerHTML='<div class="ok-msg">✅ Fond appliqué et sauvegardé (diffusé à la prochaine MAJ).</div>';
+          else $("#w-msg").innerHTML='<div class="err-msg">Stockage local insuffisant (image trop lourde).</div>';
+          App.adminTab("wallpaper");
+        }catch(e){ $("#w-msg").innerHTML='<div class="err-msg">'+esc(e.message)+'</div>'; } };
+      $("#w-reset").onclick=()=>{ Wallpaper.reset(); toast("Fond réinitialisé"); App.adminTab("wallpaper"); };
+      return; }
     if(t==="veille"){ const c=Veille.candidates();
       B.innerHTML=`<div class="card"><h3>🛰️ Veille automatique (${Veille.PERIOD_DAYS} j)</h3>
-        <p class="muted">Prochaine vérif auto dans <b>${Veille.daysLeft()} j</b> • En attente : <b>${c.length}</b> • Diffusion aux tiers uniquement après approbation + publication admin.</p>
+        <p class="muted">Prochaine vérif auto dans <b>${Veille.daysLeft()} j</b> • En attente : <b>${c.length}</b> • Diffusion tiers uniquement après approbation + publication admin.</p>
         <div class="row" style="margin-top:.6rem"><button class="btn" id="v-check">🔄 Vérifier maintenant</button><button class="btn sec" id="v-all">✅ Tout approuver</button></div>
         <hr style="border-color:var(--bd);margin:1rem 0"><h3>🌐 Recherche NHTSA en direct</h3>
         <div class="grid g2"><div><label>Marque</label><input id="v-make" placeholder="Skoda"></div><div><label>Modèle</label><input id="v-model" placeholder="Elroq"></div><div><label>Année</label><input id="v-year" type="number" value="2026"></div></div>
@@ -190,7 +203,7 @@ const App = {
     if(t==="recalls"){ const l=Recalls.customs(); B.innerHTML=`<div class="card"><h3>Rappels perso (${l.length})</h3>${l.length?`<table><tbody>${l.map((x,i)=>`<tr><td class="code">${esc(x.id)}</td><td>${esc(x.comp)}</td><td><button class="btn small danger" data-rd="${i}">🗑️</button></td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucun.</p>'}</div>`;
       B.querySelectorAll("[data-rd]").forEach(b=>b.onclick=()=>{ if(confirm("Supprimer ?")){ const x=Recalls.customs(); x.splice(+b.dataset.rd,1); Recalls.saveCustoms(x); App.adminTab("recalls"); }}); return; }
     if(t==="update"){ const meta=Updater.meta();
-      B.innerHTML=`<div class="card"><h3>📦 MAJ (admin) — diffusion tiers</h3><p class="muted">Appliquée v${Updater.applied()} • Serveur <span id="u-srv">…</span></p>
+      B.innerHTML=`<div class="card"><h3>📦 MAJ (admin) — diffusion tiers</h3><p class="muted">Appliquée v${Updater.applied()} • Serveur <span id="u-srv">…</span> • Le pack inclut le fond d'écran admin actuel.</p>
         <div class="grid g2"><div><label>Version</label><input id="u-ver" type="number" value="${Updater.applied()+1}"></div><div><label>Notes</label><input id="u-notes"></div></div>
         <div class="row" style="margin-top:.6rem"><button class="btn" id="u-dl">⬇️ Pack</button><button class="btn sec" id="u-check">🔄 Vérifier</button></div>
         <hr style="border-color:var(--bd)"><div class="grid g2"><div><label>Jeton GitHub</label><input id="u-token" type="password"></div><div><label>Owner/repo</label><div class="row"><input id="u-owner"><input id="u-repo"></div></div></div>
@@ -206,20 +219,20 @@ const App = {
     if(t==="tiers"){ const l=Auth.tiers(); const rq=Auth.requests();
       B.innerHTML=`<div class="card"><h3>Créer un code tiers</h3><div class="grid g2"><div><label>Nom</label><input id="t-name"></div><div><label>Expiration</label><input id="t-exp" type="date"></div></div>
         <button class="btn" id="t-add" style="margin-top:.6rem">Générer</button><div id="t-new"></div></div>
-        <div class="card"><h3>Demandes d'accès reçues (${rq.length})</h3>${rq.length?`<table><tbody>${rq.map(x=>`<tr><td class="code">${esc(x.ref)}</td><td>${esc(x.name)}</td><td class="muted">${esc(x.contact)}</td><td class="muted">${esc((x.msg||"").slice(0,40))}</td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucune demande sur cet appareil.</p>'}</div>
+        <div class="card"><h3>Demandes d'accès (${rq.length})</h3>${rq.length?`<table><tbody>${rq.map(x=>`<tr><td class="code">${esc(x.ref)}</td><td>${esc(x.name)}</td><td class="muted">${esc(x.contact)}</td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucune.</p>'}</div>
         <div class="card"><h3>Codes tiers (${l.length})</h3><table><tbody>${l.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.active?'actif':'inactif'}</td><td><button class="btn small sec" data-tm="${esc(x.code)}">📧 Envoyer</button> <button class="btn small sec" data-tt="${esc(x.code)}">${x.active?"Désactiver":"Activer"}</button> <button class="btn small danger" data-tx="${esc(x.code)}">🗑️</button></td></tr>`).join("")}</tbody></table></div>`;
       $("#t-add").onclick=()=>{ const c=Auth.addTier($("#t-name").value||"Accès tiers",$("#t-exp").value||null); $("#t-new").innerHTML=`<div class="ok-msg">Code : <b class="code">${c}</b> — envoyez-le par mail (📧).</div>`; setTimeout(()=>App.adminTab("tiers"),1500); };
-      B.querySelectorAll("[data-tm]").forEach(b=>b.onclick=()=>{ mailto("", "Votre code d'accès Ma Tech by Kevin", "Bonjour,\n\nVotre code d'accès tiers (lecture seule) : "+b.dataset.tm+"\nOuvrez l'application → écran de connexion → « Accès tiers ».\n\nCordialement,\nKevin"); toast("📧 Mail préparé"); });
+      B.querySelectorAll("[data-tm]").forEach(b=>b.onclick=()=>{ mailto("","Votre code d'accès Ma Tech by Kevin","Bonjour,\n\nVotre code d'accès tiers : "+b.dataset.tm+"\nOuvrez l'application → connexion → « Accès tiers ».\n\nCordialement,\nKevin"); toast("📧 Mail préparé"); });
       B.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{ Auth.toggleTier(b.dataset.tt); App.adminTab("tiers"); });
       B.querySelectorAll("[data-tx]").forEach(b=>b.onclick=()=>{ if(confirm("Supprimer ?")){ Auth.removeTier(b.dataset.tx); App.adminTab("tiers"); }}); return; }
     if(t==="audit"){ const l=Store.read(CONFIG.K.audit,[]); B.innerHTML=`<div class="card"><h3>Journal (${l.length})</h3><table><tbody>${l.slice(0,200).map(x=>`<tr><td class="muted">${esc(x.d.replace("T"," ").slice(0,16))}</td><td>${esc(x.u)}</td><td>${esc(x.action)}</td></tr>`).join("")}</tbody></table></div>`; return; }
     if(t==="secu"){ B.innerHTML=`<div class="card" style="max-width:460px"><h3>Sécurité</h3>
-        <p class="muted">Politique : <b>un seul mot de passe administrateur valide</b> (défini dans la configuration). Aucun changement de mot de passe n'est autorisé ; les tiers obtiennent un code d'accès distinct après demande.</p>
+        <p class="muted">Politique : <b>un seul mot de passe administrateur valide</b>. Aucun changement autorisé ; les tiers obtiennent un code distinct après demande.</p>
         <button class="btn sec" id="s-forget">Oublier cet appareil</button><div id="s-msg"></div></div>`;
       $("#s-forget").onclick=()=>{ Auth.forgetDevice(); $("#s-msg").innerHTML='<div class="ok-msg">Mémorisation supprimée.</div>'; }; return; }
   },
   bindAdmin(){ $("#a-tab").onchange=e=>App.adminTab(e.target.value); $("#a-new").onclick=()=>App.openEditor(null);
-    $("#a-export").onclick=()=>{ Updater.download("sauvegarde-"+Date.now()+".json",{overrides:JSON.parse(localStorage.getItem(CONFIG.K.overrides)||"{}"),customs:Store.customs(),recalls:Recalls.customs(),tsb:TSB.customs(),tiers:Auth.tiers(),modelsExtra:Veille.modelsExtra()}); };
+    $("#a-export").onclick=()=>{ Updater.download("sauvegarde-"+Date.now()+".json",{overrides:JSON.parse(localStorage.getItem(CONFIG.K.overrides)||"{}"),customs:Store.customs(),recalls:Recalls.customs(),tsb:TSB.customs(),tiers:Auth.tiers(),modelsExtra:Veille.modelsExtra(),wallpaper:Wallpaper.get()}); };
     App.adminTab("veille"); },
   openEditor(f){ const isNew=!f; if(isNew) f={key:"",code:"",brand:"",title:"",desc:"",sev:2,symptoms:[],causes:[],solutions:[]};
     const bg=document.createElement("div"); bg.className="modal-bg";
@@ -237,8 +250,8 @@ const App = {
       <h2 style="margin-top:.6rem">${esc(t.comp)}</h2><p><b>Problème :</b> ${esc(t.prob)}</p><p><b>Symptômes :</b> ${esc(t.sym.join(" • "))}</p><p><b>Solution :</b> ${esc(t.fix)}</p></div>`;
     document.body.appendChild(bg);
     bg.querySelector("#tsb-pdf").onclick=()=>{ PDF.download("tsb-"+t.id+".pdf", t.comp, [
-      {h:"Problème connu", lines:[t.prob]}, {h:"Symptômes", lines:t.sym}, {h:"Solution / bulletin", lines:[t.fix]},
-      {h:"Source", lines:[(TSB.SRC[t.src]||t.src)+" — réf. "+t.ref]}, {h:"Véhicules", lines:[t.brands.join(", ")+" "+((t.models&&t.models.length)?t.models.join(", "):"")]} ]); toast("📄 PDF généré"); }; }
+      {h:"Problème connu",lines:[t.prob]},{h:"Symptômes",lines:t.sym},{h:"Solution / bulletin",lines:[t.fix]},
+      {h:"Source",lines:[(TSB.SRC[t.src]||t.src)+" — réf. "+t.ref]},{h:"Véhicules",lines:[t.brands.join(", ")]} ]); toast("📄 PDF généré"); }; }
 };
 
 document.addEventListener("click", async e => {
