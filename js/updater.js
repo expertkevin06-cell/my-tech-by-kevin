@@ -23,11 +23,13 @@ const Updater = {
     if(p.tsb){ const t=TSB.customs(); p.tsb.forEach(x=>{ const i=t.findIndex(y=>y.id===x.id); if(i>=0)t[i]=x; else t.push(x); }); TSB.saveCustoms(t); }
     if(p.tiers){ const t=Auth.tiers(); p.tiers.forEach(x=>{ const i=t.findIndex(y=>y.code===x.code); if(i>=0)t[i]=x; else t.push(x); }); Auth.saveTiers(t); }
     if(p.modelsExtra){ const m=Veille.modelsExtra(); p.modelsExtra.forEach(x=>{ if(!m.some(y=>y.brand===x.brand&&y.model===x.model)) m.push(x); }); Veille.saveModelsExtra(m); Veille.mergeModels(); }
+    if(p.wallpaper !== undefined){ if(p.wallpaper) Wallpaper.set(p.wallpaper); else Wallpaper.reset(); }
   },
   buildPack(version, notes){
     return { app:CONFIG.APP_NAME, version:+version, date:new Date().toISOString(), notes:notes||"",
       overrides:Store.read(CONFIG.K.overrides,{}), customs:Store.customs(), deleted:Store.read(CONFIG.K.deleted,[]),
-      recalls:Recalls.customs(), tsb:TSB.customs(), tiers:Auth.tiers(), modelsExtra:Veille.modelsExtra() };
+      recalls:Recalls.customs(), tsb:TSB.customs(), tiers:Auth.tiers(), modelsExtra:Veille.modelsExtra(),
+      wallpaper:Wallpaper.get() };
   },
   manifestFor(version, notes){ return { version:+version, date:new Date().toISOString(), file:"data/update-pack.json", notes:notes||"" }; },
   download(name,obj){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"})); a.download=name; a.click(); },
