@@ -4,6 +4,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const isAdmin=()=>Session.role()==="admin";
 function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.classList.add("show"),10); setTimeout(()=>{t.classList.remove("show"); setTimeout(()=>t.remove(),300);},3800); }
 function navigate(h){ if(location.hash===h) App.route(); else location.hash=h; }
+function mailto(to, subject, body){ location.href="mailto:"+(to||"")+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body); }
 function fatal(err){ console.error(err); const b=document.getElementById("boot-error"); if(b){ b.style.display="block"; const m=b.querySelector("#be-msg"); if(m) m.textContent=(err&&err.message)||String(err); } }
 window.addEventListener("error", e=>fatal(e.error||e.message));
 window.addEventListener("unhandledrejection", e=>fatal(e.reason));
@@ -21,8 +22,7 @@ const App = {
       window.addEventListener("online", ()=>{ App.updateNet(); toast("🌐 Connexion rétablie"); });
       window.addEventListener("offline", ()=>{ App.updateNet(); toast("⛔ Hors ligne — mode local"); });
       Updater.checkAndApply().then(r=>{ if(r.ok) toast("✅ MAJ v"+r.version+" appliquée"); }).catch(()=>{});
-      /* Veille 15 j automatique (candidats en attente ; approbation admin seule) */
-      if (Veille.due()) Veille.check().then(r=>{ if(r.ok && r.count && isAdmin()) toast("🛰️ Veille 15 j : "+r.count+" nouveauté(s) à approuver"); }).catch(()=>{});
+      if (Veille.due()) Veille.check().then(r=>{ if(r.ok&&r.count&&isAdmin()) toast("🛰️ Veille 15 j : "+r.count+" nouveauté(s) à approuver"); }).catch(()=>{});
       App.route();
       const st=await SelfTest.run(); const bad=SelfTest.failures();
       if(bad.length) toast("⚠️ Autocontrôle : "+bad.length+" anomalie(s) — ouvrez 🩺");
@@ -31,6 +31,9 @@ const App = {
   },
   updateNet(){ const on=navigator.onLine; $$("[id^=netbadge]").forEach(el=>{ el.textContent=on?"🌐 connecté":"⛔ hors ligne"; el.className="tag "+(on?"on":"off"); }); },
   async doShare(){ const url=location.origin+location.pathname; try{ if(navigator.share){ await navigator.share({title:"Ma Tech by Kevin",url}); toast("✅ Lien partagé"); } else { await navigator.clipboard.writeText(url); toast("🔗 Lien copié"); } }catch(e){ toast("Partage annulé"); } },
+  doShareMail(){ mailto("", "Ma Tech by Kevin — application diagnostic automobile",
+      "Bonjour,\n\nDécouvrez Ma Tech by Kevin : 21 000 fiches DTC, pannes connues/TSB, campagnes de rappels, motorisations 2017-2026, utilisable hors ligne.\n\nLien : "+location.origin+location.pathname+
+      "\n\nPour un accès tiers : ouvrez l'application → écran de connexion → « Demander un accès » (une référence REQ-xxxx vous sera fournie).\n\nCordialement."); toast("📧 Mail préparé"); },
   async doInstall(){ if(App.deferredPrompt){ App.deferredPrompt.prompt(); const r=await App.deferredPrompt.userChoice; toast(r.outcome==="accepted"?"📥 Installation lancée":"Annulé"); App.deferredPrompt=null; } else toast("ℹ️ Menu navigateur → Installer"); },
   route(){
     try{
@@ -44,13 +47,13 @@ const App = {
       App.renderShell((V[view]||App.renderSearch)()); window.scrollTo(0,0);
     }catch(err){ fatal(err); }
   },
-  renderShell(body){
-    const role=Session.role(); const pend=isAdmin()?Veille.candidates().length:0;
+  renderShell(body){ const role=Session.role(); const pend=isAdmin()?Veille.candidates().length:0;
     $("#app").innerHTML=`
     <div class="topbar"><div class="logo">⚙️ Ma Tech <span>by Kevin</span></div>
       <span class="badge ${role==='admin'?'b-admin':'b-tier'}">${role==='admin'?'ADMIN':'TIERS'}</span>
       <span class="tag" id="netbadge"></span><div class="spacer"></div>
-      <button class="btn sec small" data-act="nav" data-view="diag">🩺</button>
+      <button class="btn sec small" data-act="share-mail" title="Partager par mail">📧</button>
+      <button class="btn sec small" data-act="nav" data-view="diag" title="Autocontrôle">🩺</button>
       <button class="btn sec small" data-act="share">🔗</button><button class="btn sec small" data-act="install">📥</button>
       <button class="btn sec small" data-act="logout">Déconnexion</button></div>
     <nav class="tabs" style="padding:.4rem 1rem;background:rgba(19,26,42,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--bd);display:flex">
@@ -61,20 +64,61 @@ const App = {
       ${isAdmin()?'<button type="button" data-act="nav" data-view="admin" class="'+(App.state.view==='admin'?'active':'')+'">🛠️ Admin'+(pend?' ('+pend+')':'')+'</button>':''}
     </nav>
     <main>${body}</main>
-    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — veille 15 j (approbation admin) — fond véhicule permanent — 2017 → 2026</div>`;
+    <div class="footer">Ma Tech by Kevin v${CONFIG.VERSION} — pack v${Updater.applied()} — admin : mot de passe unique — veille 15 j — PDF & partage mail — 2017 → 2026</div>`;
     App.updateNet(); App.bindView();
   },
-  renderLogin(){ const setup=!Auth.hasAdmin();
+  renderLogin(){
     $("#app").innerHTML=`<div class="login-wrap"><div class="card login-box">
       <div class="logo" style="font-size:1.4rem">⚙️ Ma Tech <span>by Kevin</span></div>
-      ${setup?`<h3 style="margin-top:.8rem">🔐 Première utilisation — définir le mot de passe admin</h3><label>Identifiant</label><input id="s-user" placeholder="admin"><label>Mot de passe (6 min)</label><input id="s-pass" type="password"><label>Confirmation</label><input id="s-conf" type="password"><button class="btn" id="s-go" style="width:100%;margin-top:.8rem">Créer et ouvrir</button><div class="err-msg" id="s-err"></div>`
-      :`<label style="margin-top:.8rem">Identifiant</label><input id="l-user"><label>Mot de passe</label><input id="l-pass" type="password"><label class="row" style="font-size:.82rem"><input type="checkbox" id="l-rem" style="width:auto"> Se souvenir sur cet appareil</label><button class="btn" id="l-admin" style="width:100%;margin-top:.8rem">Connexion</button><div class="err-msg" id="l-err"></div>`}
-      <hr style="border-color:var(--bd);margin:1rem 0"><label>Code tiers</label><input id="l-code" placeholder="TIER-XXXXXX" style="text-transform:uppercase"><button class="btn sec" id="l-tier" style="width:100%;margin-top:.6rem">Accès tiers</button><div class="err-msg" id="l-err2"></div>
+      <p class="muted">21 000 fiches + pannes/TSB + rappels • 2017-2026 • hors ligne</p>
+      <label style="margin-top:.8rem">Identifiant administrateur</label><input id="l-user" value="admin" autocomplete="username">
+      <label>Mot de passe administrateur</label><input id="l-pass" type="password" autocomplete="current-password">
+      <label class="row" style="font-size:.82rem"><input type="checkbox" id="l-rem" style="width:auto"> Se souvenir sur cet appareil</label>
+      <button class="btn" id="l-admin" style="width:100%;margin-top:.6rem">Connexion administrateur</button>
+      <div class="err-msg" id="l-err"></div>
+      <hr style="border-color:var(--bd);margin:1rem 0">
+      <h3>Accès tiers (lecture seule)</h3>
+      <label>Code d'accès reçu</label><input id="l-code" placeholder="TIER-XXXXXX" style="text-transform:uppercase">
+      <div class="row" style="margin-top:.6rem"><button class="btn sec" id="l-tier" style="flex:1">Accéder</button>
+      <button class="btn sec" id="l-req" style="flex:1">📧 Demander un accès</button></div>
+      <div class="err-msg" id="l-err2"></div><div class="ok-msg" id="l-ok2"></div>
+      <div class="row" style="margin-top:1rem;justify-content:center"><span class="tag" id="netbadge"></span>
+        <button class="btn sec small" data-act="share-mail">📧 Mail</button><button class="btn sec small" data-act="install">📥 Installer</button></div>
     </div></div>`;
-    if(setup) $("#s-go").onclick=async()=>{const p=$("#s-pass").value,c=$("#s-conf").value; if(p.length<6)return $("#s-err").textContent="6 min."; if(p!==c)return $("#s-err").textContent="Différent."; await Auth.setupAdmin($("#s-user").value.trim()||"admin",p); location.hash="#/search"; App.route();};
-    else $("#l-admin").onclick=async()=>{const ok=await Auth.loginAdmin($("#l-user").value.trim(),$("#l-pass").value,$("#l-rem").checked); if(ok){location.hash="#/search";App.route();} else $("#l-err").textContent="Incorrect.";};
-    $("#l-tier").onclick=()=>{ if(Auth.loginTier($("#l-code").value)){location.hash="#/search";App.route();} else $("#l-err2").textContent="Code invalide."; };
+    App.updateNet();
+    $("#l-admin").onclick=async()=>{ const ok=await Auth.loginAdmin($("#l-user").value.trim(), $("#l-pass").value, $("#l-rem").checked);
+      if(ok){ location.hash="#/search"; App.route(); } else $("#l-err").textContent="Mot de passe administrateur incorrect."; };
+    $("#l-tier").onclick=()=>{ if(Auth.loginTier($("#l-code").value)){ location.hash="#/search"; App.route(); } else $("#l-err2").textContent="Code tiers invalide, inactif ou expiré."; };
+    $("#l-req").onclick=()=>App.openRequest();
   },
+  openRequest(){
+    const bg=document.createElement("div"); bg.className="modal-bg";
+    bg.innerHTML=`<div class="modal"><h2>📧 Demande d'accès tiers</h2>
+      <p class="muted">Le mot de passe administrateur n'est jamais communiqué. Votre demande est transmise par mail à l'administrateur qui décidera de vous délivrer un code d'accès.</p>
+      <label>Votre nom / société</label><input id="rq-name">
+      <label>Votre mail ou téléphone</label><input id="rq-contact">
+      <label>Motif de la demande</label><textarea id="rq-msg" rows="3"></textarea>
+      <div class="row" style="justify-content:flex-end;margin-top:.8rem"><button class="btn sec" data-act="modal-close">Annuler</button><button class="btn" id="rq-send">Envoyer la demande</button></div>
+      <div id="rq-out"></div></div>`;
+    document.body.appendChild(bg);
+    bg.querySelector("#rq-send").onclick=()=>{
+      const name=bg.querySelector("#rq-name").value.trim(), contact=bg.querySelector("#rq-contact").value.trim();
+      if(!name||!contact) return bg.querySelector("#rq-out").innerHTML='<div class="err-msg">Nom et contact requis.</div>';
+      const ref=Auth.addRequest({ name, contact, msg:bg.querySelector("#rq-msg").value.trim() });
+      mailto(CONFIG.ADMIN_EMAIL, "Demande d'accès Ma Tech by Kevin "+ref,
+        "Nouvelle demande d'accès tiers\nRéférence : "+ref+"\nNom : "+name+"\nContact : "+contact+"\nMotif : "+(bg.querySelector("#rq-msg").value.trim()||"-")+"\nAppareil : "+(navigator.userAgent||"").slice(0,120));
+      bg.querySelector("#rq-out").innerHTML='<div class="ok-msg">Demande enregistrée — référence <b>'+ref+'</b>. Un mail pré-rempli vient de s'+"'"+'ouvrir ; après validation, l'+"'"+'admin vous enverra votre code TIER.</div>';
+    };
+  },
+  fichePDF(key){ const f=resolveFiche(key); if(!f) return;
+    PDF.download("fiche-"+f.code+".pdf", f.code+" — "+f.title, [
+      {h:"Description", lines:[f.desc]},
+      {h:"Symptômes", lines:f.symptoms||[]},
+      {h:"Causes probables", lines:f.causes||[]},
+      {h:"Solutions / contrôles", lines:f.solutions||[]},
+      {h:"Véhicules concernés", lines:[(f.brands||[]).join(", "), "Motorisations : "+(f.motors||[]).join(", ")], },
+      {h:"Métadonnées", lines:["Sévérité : "+f.sevLabel, "Millésimes : "+f.years, "Source : Ma Tech by Kevin v"+CONFIG.VERSION]}
+    ]); toast("📄 PDF généré"); },
   renderDiag(){ const rows=SelfTest.last().map(r=>`<tr><td>${r.ok?"✅":"❌"}</td><td>${esc(r.name)}</td><td class="muted">${esc(r.detail||"")}</td></tr>`).join("");
     return `<div class="card"><h1>🩺 Autocontrôle</h1><div class="row"><button class="btn" data-act="diag-run">Relancer</button><button class="btn sec" data-act="diag-clearsw">Vider cache SW</button></div>
       <table style="margin-top:.8rem"><thead><tr><th>État</th><th>Test</th><th>Détail</th></tr></thead><tbody>${rows||'<tr><td colspan=3>Lancez les tests.</td></tr>'}</tbody></table></div>`; },
@@ -116,25 +160,28 @@ const App = {
   renderRappel(id){ const r=Recalls.byId(id); if(!r) return `<div class="card">Introuvable.</div>`;
     return `<div class="card"><div class="row"><span class="code">${esc(r.id)}</span><span class="tag">${(r.fuels&&r.fuels.length)?esc(r.fuels.join("/")):"toutes énergies"}</span><div class="spacer"></div><button class="btn sec small" data-act="back">←</button></div><h2 style="margin-top:.6rem">${esc(r.comp)}</h2><p><b>Risque :</b> ${esc(r.risk)}</p><p><b>Solution :</b> ${esc(r.fix)}</p></div>`; },
   renderFiche(key){ const f=resolveFiche(key); if(!f) return `<div class="card">Introuvable.</div>`;
-    return `<div class="card"><div class="row"><span class="code">${esc(f.code)}</span><span class="tag"><span class="sev s${f.sev}"></span>${esc(f.sevLabel)}</span><div class="spacer"></div><button class="btn sec small" data-act="back">←</button>${isAdmin()?`<button class="btn small" data-act="fiche-edit" data-key="${esc(key)}">✏️</button>`:''}</div><h2 style="margin-top:.6rem">${esc(f.title)}</h2><p>${esc(f.desc)}</p></div>`; },
+    return `<div class="card"><div class="row"><span class="code">${esc(f.code)}</span><span class="tag"><span class="sev s${f.sev}"></span>${esc(f.sevLabel)}</span><div class="spacer"></div>
+      <button class="btn sec small" data-act="fiche-pdf" data-key="${esc(key)}">📄 PDF</button>
+      <button class="btn sec small" data-act="back">←</button>${isAdmin()?`<button class="btn small" data-act="fiche-edit" data-key="${esc(key)}">✏️</button>`:''}</div>
+      <h2 style="margin-top:.6rem">${esc(f.title)}</h2><p>${esc(f.desc)}</p></div>
+      <div class="grid g2"><div class="card"><h3>🩺 Symptômes</h3><ul style="padding-left:1.2rem">${(f.symptoms||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>
+      <div class="card"><h3>🔧 Causes</h3><ul style="padding-left:1.2rem">${(f.causes||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div></div>
+      <div class="card"><h3>✅ Solutions</h3><ol style="padding-left:1.4rem">${(f.solutions||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>`; },
   renderAdmin(){ return `<div class="row" style="margin-bottom:1rem"><button class="btn small" id="a-new">➕ Fiche</button><button class="btn sec small" id="a-export">⬇️ Export</button><button class="btn sec small" data-act="nav" data-view="diag">🩺 Autocontrôle</button><div class="spacer"></div>
-    <select id="a-tab" style="max-width:220px"><option value="veille">🛰️ Veille 15 j</option><option value="customs">Fiches perso</option><option value="tsb">📚 TSB perso</option><option value="recalls">Rappels perso</option><option value="update">📦 MAJ APK</option><option value="tiers">Tiers</option><option value="audit">Audit</option><option value="secu">Sécurité</option></select></div><div id="a-body"></div>`; },
+    <select id="a-tab" style="max-width:220px"><option value="veille">🛰️ Veille 15 j</option><option value="customs">Fiches perso</option><option value="tsb">📚 TSB perso</option><option value="recalls">Rappels perso</option><option value="update">📦 MAJ APK</option><option value="tiers">Tiers & demandes</option><option value="audit">Audit</option><option value="secu">Sécurité</option></select></div><div id="a-body"></div>`; },
   adminTab(t){ const B=$("#a-body");
     if(t==="veille"){ const c=Veille.candidates();
-      B.innerHTML=`<div class="card"><h3>🛰️ Veille automatique (tous les ${Veille.PERIOD_DAYS} jours)</h3>
-        <p class="muted">Prochaine vérif auto dans <b>${Veille.daysLeft()} j</b> • En attente d'approbation : <b>${c.length}</b> • Seul l'admin diffuse aux tiers.</p>
+      B.innerHTML=`<div class="card"><h3>🛰️ Veille automatique (${Veille.PERIOD_DAYS} j)</h3>
+        <p class="muted">Prochaine vérif auto dans <b>${Veille.daysLeft()} j</b> • En attente : <b>${c.length}</b> • Diffusion aux tiers uniquement après approbation + publication admin.</p>
         <div class="row" style="margin-top:.6rem"><button class="btn" id="v-check">🔄 Vérifier maintenant</button><button class="btn sec" id="v-all">✅ Tout approuver</button></div>
         <hr style="border-color:var(--bd);margin:1rem 0"><h3>🌐 Recherche NHTSA en direct</h3>
         <div class="grid g2"><div><label>Marque</label><input id="v-make" placeholder="Skoda"></div><div><label>Modèle</label><input id="v-model" placeholder="Elroq"></div><div><label>Année</label><input id="v-year" type="number" value="2026"></div></div>
         <button class="btn sec" id="v-nhtsa" style="margin-top:.6rem">Interroger NHTSA</button><div id="v-msg"></div></div>
-        <div class="card"><h3>Candidats (${c.length})</h3>${c.length?`<table><thead><tr><th></th><th>Type</th><th>Marque/Modèle</th><th>Objet</th><th></th></tr></thead><tbody>
-        ${c.map(x=>`<tr><td><input type="checkbox" class="v-sel" data-vid="${esc(x.id)}" style="width:auto"></td><td><span class="tag b">${esc(x.type)}</span></td><td>${esc(x.brand||"")} ${esc(x.model||"")}</td><td>${esc((x.comp||x.title||"").slice(0,60))}</td><td><button class="btn small" data-va="${esc(x.id)}">Approuver</button></td></tr>`).join("")}
-        </tbody></table>`:'<p class="muted">Aucun candidat en attente.</p>'}</div>`;
-      $("#v-check").onclick=async()=>{ const r=await Veille.check(true); toast(r.ok?("🛰️ +"+r.count+" candidat(s)"):"ℹ️ "+r.reason); App.adminTab("veille"); };
-      $("#v-all").onclick=()=>{ if(c.length&&confirm("Approuver tous les candidats ?")){ Veille.approve(c.map(x=>x.id)); toast("✅ Approuvés — publiez la MAJ pour diffusion"); App.adminTab("veille"); } };
-      $("#v-nhtsa").onclick=async()=>{ try{ const l=await Veille.nhtsa($("#v-make").value.trim(),$("#v-model").value.trim(),+$("#v-year").value); const n=Veille.importNhtsa(l); $("#v-msg").innerHTML=`<div class="ok-msg">${n} résultat(s) ajouté(s) aux candidats.</div>`; setTimeout(()=>App.adminTab("veille"),1200); }catch(e){ $("#v-msg").innerHTML=`<div class="err-msg">NHTSA injoignable : ${esc(e.message)}</div>`; } };
-      B.querySelectorAll("[data-va]").forEach(b=>b.onclick=()=>{ Veille.approve([b.dataset.va]); toast("✅ Approuvé"); App.adminTab("veille"); });
-      return; }
+        <div class="card"><h3>Candidats (${c.length})</h3>${c.length?`<table><tbody>${c.map(x=>`<tr><td><span class="tag b">${esc(x.type)}</span></td><td>${esc(x.brand||"")} ${esc(x.model||"")}</td><td>${esc((x.comp||x.title||"").slice(0,60))}</td><td><button class="btn small" data-va="${esc(x.id)}">Approuver</button></td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucun candidat.</p>'}</div>`;
+      $("#v-check").onclick=async()=>{ const r=await Veille.check(true); toast(r.ok?("🛰️ +"+r.count):"ℹ️ "+r.reason); App.adminTab("veille"); };
+      $("#v-all").onclick=()=>{ if(c.length&&confirm("Approuver tous les candidats ?")){ Veille.approve(c.map(x=>x.id)); toast("✅ Approuvés — publiez la MAJ"); App.adminTab("veille"); } };
+      $("#v-nhtsa").onclick=async()=>{ try{ const l=await Veille.nhtsa($("#v-make").value.trim(),$("#v-model").value.trim(),+$("#v-year").value); const n=Veille.importNhtsa(l); $("#v-msg").innerHTML=`<div class="ok-msg">${n} résultat(s) ajouté(s).</div>`; setTimeout(()=>App.adminTab("veille"),1200); }catch(e){ $("#v-msg").innerHTML=`<div class="err-msg">NHTSA injoignable : ${esc(e.message)}</div>`; } };
+      B.querySelectorAll("[data-va]").forEach(b=>b.onclick=()=>{ Veille.approve([b.dataset.va]); toast("✅ Approuvé"); App.adminTab("veille"); }); return; }
     if(t==="customs"){ const c=Store.customs(); B.innerHTML=`<div class="card"><h3>Fiches perso (${c.length})</h3>${c.length?`<table><tbody>${c.map((x,i)=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.title.slice(0,50))}</td><td><button class="btn small sec" data-ce="${i}">✏️</button> <button class="btn small danger" data-cd="${i}">🗑️</button></td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucune.</p>'}</div>`;
       B.querySelectorAll("[data-ce]").forEach(b=>b.onclick=()=>App.openEditor(Store.customs()[+b.dataset.ce]));
       B.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{ if(confirm("Supprimer ?")){ Store.removeCustom(+b.dataset.cd); App.adminTab("customs"); }}); return; }
@@ -143,28 +190,32 @@ const App = {
     if(t==="recalls"){ const l=Recalls.customs(); B.innerHTML=`<div class="card"><h3>Rappels perso (${l.length})</h3>${l.length?`<table><tbody>${l.map((x,i)=>`<tr><td class="code">${esc(x.id)}</td><td>${esc(x.comp)}</td><td><button class="btn small danger" data-rd="${i}">🗑️</button></td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucun.</p>'}</div>`;
       B.querySelectorAll("[data-rd]").forEach(b=>b.onclick=()=>{ if(confirm("Supprimer ?")){ const x=Recalls.customs(); x.splice(+b.dataset.rd,1); Recalls.saveCustoms(x); App.adminTab("recalls"); }}); return; }
     if(t==="update"){ const meta=Updater.meta();
-      B.innerHTML=`<div class="card"><h3>📦 MAJ (admin) — diffusion aux tiers</h3><p class="muted">Appliquée v${Updater.applied()} • Serveur <span id="u-srv">…</span></p>
+      B.innerHTML=`<div class="card"><h3>📦 MAJ (admin) — diffusion tiers</h3><p class="muted">Appliquée v${Updater.applied()} • Serveur <span id="u-srv">…</span></p>
         <div class="grid g2"><div><label>Version</label><input id="u-ver" type="number" value="${Updater.applied()+1}"></div><div><label>Notes</label><input id="u-notes"></div></div>
         <div class="row" style="margin-top:.6rem"><button class="btn" id="u-dl">⬇️ Pack</button><button class="btn sec" id="u-check">🔄 Vérifier</button></div>
         <hr style="border-color:var(--bd)"><div class="grid g2"><div><label>Jeton GitHub</label><input id="u-token" type="password"></div><div><label>Owner/repo</label><div class="row"><input id="u-owner"><input id="u-repo"></div></div></div>
-        <button class="btn" id="u-gh" style="margin-top:.6rem">🚀 Publier (diffusion tiers)</button><div id="u-msg"></div>
-        <p class="muted" style="margin-top:.6rem">Inclut fiches, TSB, rappels, codes tiers et modèles/motorisations approuvés via la veille.</p></div>`;
+        <button class="btn" id="u-gh" style="margin-top:.6rem">🚀 Publier (diffusion tiers)</button><div id="u-msg"></div></div>`;
       const d=Updater.detectRepo(); $("#u-owner").value=d.owner; $("#u-repo").value=d.repo;
       Updater.serverManifest().then(m=>{ $("#u-srv").textContent=m?"v"+m.version:"aucune"; if(m)$("#u-ver").value=m.version+1; });
       $("#u-check").onclick=async()=>{ const r=await Updater.checkAndApply(); toast(r.ok?"✅ v"+r.version:"ℹ️ "+r.reason); App.adminTab("update"); };
       $("#u-dl").onclick=()=>{ const v=+$("#u-ver").value,n=$("#u-notes").value; Updater.download("update-pack.json",Updater.buildPack(v,n)); setTimeout(()=>Updater.download("update.json",Updater.manifestFor(v,n)),500); };
       $("#u-gh").onclick=async()=>{ const tk=$("#u-token").value.trim(),ow=$("#u-owner").value.trim(),rp=$("#u-repo").value.trim(); if(!tk||!ow||!rp) return $("#u-msg").innerHTML='<div class="err-msg">Champs requis.</div>';
         const v=+$("#u-ver").value,n=$("#u-notes").value;
-        try{ await Updater.ghPut("data/update-pack.json",JSON.stringify(Updater.buildPack(v,n),null,2),tk,ow,rp); await Updater.ghPut("update.json",JSON.stringify(Updater.manifestFor(v,n),null,2),tk,ow,rp); $("#u-msg").innerHTML='<div class="ok-msg">✅ Publiée v'+v+' — diffusion auto tiers.</div>'; }catch(e){ $("#u-msg").innerHTML='<div class="err-msg">'+esc(e.message)+'</div>'; } };
+        try{ await Updater.ghPut("data/update-pack.json",JSON.stringify(Updater.buildPack(v,n),null,2),tk,ow,rp); await Updater.ghPut("update.json",JSON.stringify(Updater.manifestFor(v,n),null,2),tk,ow,rp); $("#u-msg").innerHTML='<div class="ok-msg">✅ Publiée v'+v+'.</div>'; }catch(e){ $("#u-msg").innerHTML='<div class="err-msg">'+esc(e.message)+'</div>'; } };
       return; }
-    if(t==="tiers"){ const l=Auth.tiers(); B.innerHTML=`<div class="card"><h3>Créer un tiers</h3><div class="grid g2"><div><label>Nom</label><input id="t-name"></div><div><label>Expiration</label><input id="t-exp" type="date"></div></div><button class="btn" id="t-add" style="margin-top:.6rem">Générer</button><div id="t-new"></div></div>
-      <div class="card"><h3>Codes (${l.length})</h3><table><tbody>${l.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.active?'actif':'inactif'}</td><td><button class="btn small sec" data-tt="${esc(x.code)}">${x.active?"Désactiver":"Activer"}</button> <button class="btn small danger" data-tx="${esc(x.code)}">🗑️</button></td></tr>`).join("")}</tbody></table></div>`;
-      $("#t-add").onclick=()=>{ const c=Auth.addTier($("#t-name").value||"Accès tiers",$("#t-exp").value||null); $("#t-new").innerHTML=`<div class="ok-msg">Code : <b class="code">${c}</b></div>`; setTimeout(()=>App.adminTab("tiers"),1200); };
+    if(t==="tiers"){ const l=Auth.tiers(); const rq=Auth.requests();
+      B.innerHTML=`<div class="card"><h3>Créer un code tiers</h3><div class="grid g2"><div><label>Nom</label><input id="t-name"></div><div><label>Expiration</label><input id="t-exp" type="date"></div></div>
+        <button class="btn" id="t-add" style="margin-top:.6rem">Générer</button><div id="t-new"></div></div>
+        <div class="card"><h3>Demandes d'accès reçues (${rq.length})</h3>${rq.length?`<table><tbody>${rq.map(x=>`<tr><td class="code">${esc(x.ref)}</td><td>${esc(x.name)}</td><td class="muted">${esc(x.contact)}</td><td class="muted">${esc((x.msg||"").slice(0,40))}</td></tr>`).join("")}</tbody></table>`:'<p class="muted">Aucune demande sur cet appareil.</p>'}</div>
+        <div class="card"><h3>Codes tiers (${l.length})</h3><table><tbody>${l.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.active?'actif':'inactif'}</td><td><button class="btn small sec" data-tm="${esc(x.code)}">📧 Envoyer</button> <button class="btn small sec" data-tt="${esc(x.code)}">${x.active?"Désactiver":"Activer"}</button> <button class="btn small danger" data-tx="${esc(x.code)}">🗑️</button></td></tr>`).join("")}</tbody></table></div>`;
+      $("#t-add").onclick=()=>{ const c=Auth.addTier($("#t-name").value||"Accès tiers",$("#t-exp").value||null); $("#t-new").innerHTML=`<div class="ok-msg">Code : <b class="code">${c}</b> — envoyez-le par mail (📧).</div>`; setTimeout(()=>App.adminTab("tiers"),1500); };
+      B.querySelectorAll("[data-tm]").forEach(b=>b.onclick=()=>{ mailto("", "Votre code d'accès Ma Tech by Kevin", "Bonjour,\n\nVotre code d'accès tiers (lecture seule) : "+b.dataset.tm+"\nOuvrez l'application → écran de connexion → « Accès tiers ».\n\nCordialement,\nKevin"); toast("📧 Mail préparé"); });
       B.querySelectorAll("[data-tt]").forEach(b=>b.onclick=()=>{ Auth.toggleTier(b.dataset.tt); App.adminTab("tiers"); });
       B.querySelectorAll("[data-tx]").forEach(b=>b.onclick=()=>{ if(confirm("Supprimer ?")){ Auth.removeTier(b.dataset.tx); App.adminTab("tiers"); }}); return; }
     if(t==="audit"){ const l=Store.read(CONFIG.K.audit,[]); B.innerHTML=`<div class="card"><h3>Journal (${l.length})</h3><table><tbody>${l.slice(0,200).map(x=>`<tr><td class="muted">${esc(x.d.replace("T"," ").slice(0,16))}</td><td>${esc(x.u)}</td><td>${esc(x.action)}</td></tr>`).join("")}</tbody></table></div>`; return; }
-    if(t==="secu"){ B.innerHTML=`<div class="card" style="max-width:420px"><h3>Mot de passe admin</h3><label>Actuel</label><input type="password" id="s-cur"><label>Nouveau</label><input type="password" id="s-new"><label>Confirmation</label><input type="password" id="s-conf"><button class="btn" id="s-go" style="margin-top:.6rem">Changer</button><button class="btn sec" id="s-forget" style="margin-top:.6rem">Oublier appareil</button><div id="s-msg"></div></div>`;
-      $("#s-go").onclick=async()=>{ if($("#s-new").value!==$("#s-conf").value) return $("#s-msg").innerHTML='<div class="err-msg">Différent.</div>'; if($("#s-new").value.length<6) return $("#s-msg").innerHTML='<div class="err-msg">6 min.</div>'; const ok=await Auth.changePassword($("#s-cur").value,$("#s-new").value); $("#s-msg").innerHTML=ok?'<div class="ok-msg">Modifié.</div>':'<div class="err-msg">Actuel incorrect.</div>'; };
+    if(t==="secu"){ B.innerHTML=`<div class="card" style="max-width:460px"><h3>Sécurité</h3>
+        <p class="muted">Politique : <b>un seul mot de passe administrateur valide</b> (défini dans la configuration). Aucun changement de mot de passe n'est autorisé ; les tiers obtiennent un code d'accès distinct après demande.</p>
+        <button class="btn sec" id="s-forget">Oublier cet appareil</button><div id="s-msg"></div></div>`;
       $("#s-forget").onclick=()=>{ Auth.forgetDevice(); $("#s-msg").innerHTML='<div class="ok-msg">Mémorisation supprimée.</div>'; }; return; }
   },
   bindAdmin(){ $("#a-tab").onchange=e=>App.adminTab(e.target.value); $("#a-new").onclick=()=>App.openEditor(null);
@@ -181,8 +232,13 @@ const App = {
       bg.remove(); App.route(); }; },
   bindView(){ const v=App.state.view; if(v==="search"){const q=$("#q"); if(q) q.onkeydown=e=>{if(e.key==="Enter")App.doSearch();};} if(v==="codes") App.applyCodesFilter(); if(v==="admin") App.bindAdmin(); },
   openTsb(id){ const t=TSB.byId(id); if(!t) return; const bg=document.createElement("div"); bg.className="modal-bg";
-    bg.innerHTML=`<div class="modal"><div class="row"><span class="tag b">${esc(TSB.SRC[t.src]||t.src)}</span><span class="code">${esc(t.id)}</span><div class="spacer"></div><button class="btn sec small" data-act="modal-close">Fermer</button></div><h2 style="margin-top:.6rem">${esc(t.comp)}</h2><p><b>Problème :</b> ${esc(t.prob)}</p><p><b>Symptômes :</b> ${esc(t.sym.join(" • "))}</p><p><b>Solution :</b> ${esc(t.fix)}</p></div>`;
-    document.body.appendChild(bg); }
+    bg.innerHTML=`<div class="modal"><div class="row"><span class="tag b">${esc(TSB.SRC[t.src]||t.src)}</span><span class="code">${esc(t.id)}</span><div class="spacer"></div>
+      <button class="btn sec small" id="tsb-pdf">📄 PDF</button><button class="btn sec small" data-act="modal-close">Fermer</button></div>
+      <h2 style="margin-top:.6rem">${esc(t.comp)}</h2><p><b>Problème :</b> ${esc(t.prob)}</p><p><b>Symptômes :</b> ${esc(t.sym.join(" • "))}</p><p><b>Solution :</b> ${esc(t.fix)}</p></div>`;
+    document.body.appendChild(bg);
+    bg.querySelector("#tsb-pdf").onclick=()=>{ PDF.download("tsb-"+t.id+".pdf", t.comp, [
+      {h:"Problème connu", lines:[t.prob]}, {h:"Symptômes", lines:t.sym}, {h:"Solution / bulletin", lines:[t.fix]},
+      {h:"Source", lines:[(TSB.SRC[t.src]||t.src)+" — réf. "+t.ref]}, {h:"Véhicules", lines:[t.brands.join(", ")+" "+((t.models&&t.models.length)?t.models.join(", "):"")]} ]); toast("📄 PDF généré"); }; }
 };
 
 document.addEventListener("click", async e => {
@@ -191,6 +247,7 @@ document.addEventListener("click", async e => {
     case "nav": navigate("#/"+el.dataset.view); break;
     case "logout": Auth.forgetDevice(); Session.clear(); location.hash=""; App.renderLogin(); break;
     case "share": App.doShare(); break;
+    case "share-mail": App.doShareMail(); break;
     case "install": App.doInstall(); break;
     case "search-go": App.doSearch(); break;
     case "codes-go": App.applyCodesFilter(); break;
@@ -198,6 +255,7 @@ document.addEventListener("click", async e => {
     case "page-prev": S.page--; App.renderPage(); break;
     case "page-next": S.page++; App.renderPage(); break;
     case "open-fiche": navigate("#/fiche/"+encodeURIComponent(el.dataset.key)); break;
+    case "fiche-pdf": App.fichePDF(el.dataset.key); break;
     case "open-rappel": navigate("#/rappel/"+encodeURIComponent(el.dataset.id)); break;
     case "open-tsb": App.openTsb(el.dataset.id); break;
     case "back": history.back(); break;
