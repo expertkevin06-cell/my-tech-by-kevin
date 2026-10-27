@@ -13,14 +13,14 @@
   "categories": ["utilities", "productivity", "education"],
   "prefer_related_applications": false,
   "icons": [
-    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Recherche DTC", "url": "./index.html#/search" },
-    { "name": "Véhicules 2017-2026", "url": "./index.html#/veh" },
-    { "name": "Campagnes de rappels", "url": "./index.html#/recalls" },
-    { "name": "Administration", "url": "./index.html#/admin" }
+    { "name": "Recherche DTC", "url": "./index.html#/search", "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Véhicules 2017-2026", "url": "./index.html#/veh", "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Campagnes de rappels", "url": "./index.html#/recalls", "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Administration", "url": "./index.html#/admin", "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }
