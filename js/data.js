@@ -1,5 +1,6 @@
 "use strict";
 const CATS = { FR:"Françaises", EU:"Européennes", US:"Américaines", AS:"Asiatiques" };
+const YR = CONFIG.YEARS[0] + "-" + CONFIG.YEARS[CONFIG.YEARS.length-1];
 
 const BRANDS = [
 {n:"Renault",o:"FR",pool:["1.0 TCe 90","1.0 TCe 100","1.2 TCe 130","1.3 TCe 140","1.3 TCe 160","1.5 Blue dCi 95","1.5 Blue dCi 115","1.6 E-TECH 145","1.8 E-Tech 160","2.0 Blue dCi 180","Électrique 135","Électrique 150","Électrique 218","1.6 Hybrid 140","Électrique 95","Électrique 120","Électrique 170","E-TECH 200","2.0 dCi 150","2.0 dCi 170","2.3 dCi 150","2.3 dCi 180","1.0 SCe 65","Électrique 82"],models:[
@@ -24,7 +25,7 @@ const BRANDS = [
 {n:"BMW",o:"EU",pool:["116i 122","118i 156","120i 170","128ti 265","116d 116","118d 150","120d 190","M340i 374","Électrique 340","Électrique 544","20i 190","20d 197","30e 299","M50 398","520i 208","530e 299","i5 eDrive40 340","i5 M60 601","520d 197","iX1 313","30d 286","M60i 530","iX M60 619"],models:[
 ["Série 1 F40|2019",[0,1,2,3,4,5,6]],["Série 3 G20|2019",[2,6,7,11,12]],["Série 5 G60|2023",[14,15,16,17,18]],["X1 U11|2022",[1,2,5,6,19]],["X3 G45|2024",[10,11,12,13]],["X5 G05|2018",[7,20,21]],["i4|2021",[8,9]],["iX|2021",[9,22]],["Z4 G29|2018",[2,7]]]},
 {n:"Mini",o:"EU",pool:["Cooper 136","Cooper S 192","JCW 231","Cooper D 116","Electric 184","Electric 218","SE 313"],models:[["Cooper III|2017",[0,1,2,3]],["Cooper IV|2024",[0,1,4,5]],["Countryman|2017",[0,1,2,3]],["Countryman II|2024",[1,2,5,6]],["Clubman|2017",[0,1,2,3]]]},
-{n:"Mercedes",o:"EU",pool:["A 180 136","A 200 163","A 250 224","A 180 d 116","A 220 d 190","C 200 204","C 300 258","C 220 d 197","C 300 e 313","E 200 204","E 300 e 313","E 220 d 197","E 450 381","EQE 350 292","EQS 450+ 360","AMG 43 421","AMG 53 435","GLC 300 e 313","EQE SUV 350 292","G 400 d 330","G 500 421","G 63 585"],models:[
+{n:"Mercedes",o:"EU",pool:["A 180 136","A 200 163","A 250 224","A 180 d 116","A 220 d 190","C 200 204","C 300 258","C 220 d 197","C 300 e 313","E 200 204","E 300 e 313","E 220 d 197","E 450 381","EQE 350 292","EQS 450+ 360","AMG 43 421","AMG 53 435","GLC 300 e 318","EQE SUV 350 292","G 400 d 330","G 500 421","G 63 585"],models:[
 ["Classe A W177|2018",[0,1,2,3,4]],["Classe C W206|2021",[5,6,7,8]],["Classe E W214|2023",[9,10,11,12]],["CLA C118|2019",[0,1,3,4]],["GLC X254|2022",[5,7,17]],["GLE V167|2019",[7,12,16]],["EQE|2022",[13]],["EQS|2021",[14]],["EQE SUV|2023",[18]],["Classe G|2018",[19,20,21]]]},
 {n:"Smart",o:"EU",pool:["Électrique 82","Électrique 272","Électrique 428","Électrique 646"],models:[["#1|2022",[1,2]],["#3|2023",[1,2]],["#5|2024",[2,3]],["fortwo|2017",[0]]]},
 {n:"Opel",o:"EU",pool:["1.2 Turbo 100","1.2 Turbo 130","1.2 Hybrid 136","1.2 Hybrid 145","1.5 Diesel 130","Électrique 136","Électrique 156","Électrique 210","Électrique 113"],models:[["Corsa F|2019",[0,1,4,5]],["Astra L|2021",[1,2,4,5,6]],["Mokka II|2021",[0,1,5,6]],["Grandland II|2024",[2,3,4,7]],["Frontera|2024",[0,2,8]],["Crossland|2017",[0,1,4]]]},
@@ -61,21 +62,74 @@ const BRANDS = [
 {n:"Lynk & Co",o:"AS",pool:["PHEV 261","Hybride 245"],models:[["01|2021",[0]],["02|2024",[1,0]]]}
 ];
 
+/* ===== CATALOGUE ÉTENDU 2023 → 2027 (nouvelles marques + nouveaux modèles/motorisations) ===== */
+const CATALOG_EXT = [
+ {brand:"Xiaomi",o:"AS",models:[{model:"SU7",y0:2024,engines:["Électrique 299","Électrique 495","Électrique 673"]},{model:"YU7",y0:2025,engines:["Électrique 320","Électrique 500"]}]},
+ {brand:"Lucid",o:"US",models:[{model:"Air",y0:2023,engines:["Électrique 480","Électrique 850"]},{model:"Gravity",y0:2025,engines:["Électrique 800","Électrique 900"]}]},
+ {brand:"Rivian",o:"US",models:[{model:"R1T",y0:2023,engines:["Électrique 533","Électrique 850"]},{model:"R1S",y0:2023,engines:["Électrique 533","Électrique 850"]},{model:"R2",y0:2026,engines:["Électrique 300","Électrique 420"]}]},
+ {brand:"VinFast",o:"AS",models:[{model:"VF 8",y0:2023,engines:["Électrique 402"]},{model:"VF 9",y0:2024,engines:["Électrique 402"]},{model:"VF 6",y0:2024,engines:["Électrique 201"]}]},
+ {brand:"Zeekr",o:"AS",models:[{model:"001",y0:2023,engines:["Électrique 272","Électrique 544"]},{model:"007",y0:2024,engines:["Électrique 310","Électrique 475"]},{model:"X",y0:2023,engines:["Électrique 272","Électrique 428"]}]},
+ {brand:"Leapmotor",o:"AS",models:[{model:"C10",y0:2024,engines:["Électrique 218","Hybride 215"]},{model:"T03",y0:2023,engines:["Électrique 109"]}]},
+ {brand:"Renault",o:"FR",models:[{model:"Twingo E-Tech",y0:2026,engines:["Électrique 95","Électrique 130"]},{model:"R5 Turbo 3E",y0:2027,engines:["Électrique 540"]}]},
+ {brand:"Peugeot",o:"FR",models:[{model:"208 III",y0:2026,engines:["1.2 Hybrid 110","1.2 Hybrid 145","Électrique 156"]}]},
+ {brand:"Citroën",o:"FR",models:[{model:"C5 Aircross III",y0:2026,engines:["1.2 Hybrid 145","Hybride 195","Électrique 210"]}]},
+ {brand:"Volkswagen",o:"EU",models:[{model:"ID.2",y0:2026,engines:["Électrique 170","Électrique 204","Électrique 226"]},{model:"ID.Every1",y0:2027,engines:["Électrique 95"]},{model:"Golf IX",y0:2027,engines:["1.5 TSI 130","2.0 TSI 204","eHybrid 272"]}]},
+ {brand:"Skoda",o:"EU",models:[{model:"Epiq",y0:2026,engines:["Électrique 170","Électrique 204"]},{model:"Octavia V",y0:2027,engines:["1.5 TSI 130","2.0 TDI 150","eHybrid 204"]}]},
+ {brand:"Toyota",o:"AS",models:[{model:"Urban Cruiser",y0:2025,engines:["Électrique 184","Électrique 231"]},{model:"RAV4 VI",y0:2026,engines:["2.5 Hybrid 222","PHEV 306"]}]},
+ {brand:"Tesla",o:"US",models:[{model:"Model 2",y0:2026,engines:["Électrique 204","Électrique 283"]},{model:"Cybercab",y0:2027,engines:["Électrique 204"]}]},
+ {brand:"BMW",o:"EU",models:[{model:"iX3 (Neue Klasse)",y0:2026,engines:["Électrique 340","Électrique 470"]},{model:"Série 3 G50",y0:2027,engines:["2.0 208","3.0 340","Électrique 400"]}]},
+ {brand:"Mercedes",o:"EU",models:[{model:"CLA EV (MMA)",y0:2025,engines:["Électrique 272","Électrique 354"]},{model:"GLC EV",y0:2026,engines:["Électrique 388","Électrique 490"]}]},
+ {brand:"Audi",o:"EU",models:[{model:"A6 e-tron",y0:2024,engines:["Électrique 380","Électrique 500"]},{model:"A2 e-tron",y0:2027,engines:["Électrique 204","Électrique 286"]}]},
+ {brand:"Hyundai",o:"AS",models:[{model:"Ioniq 7",y0:2025,engines:["Électrique 218","Électrique 325"]},{model:"Ioniq 3",y0:2027,engines:["Électrique 170"]}]},
+ {brand:"Kia",o:"AS",models:[{model:"EV4",y0:2025,engines:["Électrique 204"]},{model:"EV5",y0:2025,engines:["Électrique 218","Électrique 325"]},{model:"EV2",y0:2026,engines:["Électrique 136","Électrique 204"]}]},
+ {brand:"BYD",o:"AS",models:[{model:"Sealion 7",y0:2025,engines:["Électrique 313","Électrique 530"]},{model:"Dolphin Mini",y0:2024,engines:["Électrique 75"]}]},
+ {brand:"MG",o:"AS",models:[{model:"ES5",y0:2025,engines:["Électrique 170","Électrique 204"]}]},
+ {brand:"Volvo",o:"EU",models:[{model:"EX60",y0:2026,engines:["Électrique 374","Électrique 517"]},{model:"ES90",y0:2025,engines:["Électrique 333","Électrique 670"]}]},
+ {brand:"Polestar",o:"EU",models:[{model:"5",y0:2026,engines:["Électrique 544","Électrique 884"]}]},
+ {brand:"Jeep",o:"US",models:[{model:"Wagoneer S",y0:2025,engines:["Électrique 600"]},{model:"Recon",y0:2026,engines:["Électrique 500"]}]},
+ {brand:"Honda",o:"AS",models:[{model:"0 Series Saloon",y0:2026,engines:["Électrique 241","Électrique 340"]}]},
+ {brand:"Nissan",o:"AS",models:[{model:"Micra EV",y0:2026,engines:["Électrique 122","Électrique 150"]},{model:"Leaf III",y0:2025,engines:["Électrique 214"]}]},
+ {brand:"Mazda",o:"AS",models:[{model:"6e",y0:2025,engines:["Électrique 258"]},{model:"CX-6e",y0:2026,engines:["Électrique 258"]}]},
+ {brand:"Subaru",o:"AS",models:[{model:"Trailseeker",y0:2026,engines:["Électrique 375"]}]},
+ {brand:"Suzuki",o:"AS",models:[{model:"e-Vitara",y0:2025,engines:["Électrique 144","Électrique 184"]}]},
+ {brand:"Mini",o:"EU",models:[{model:"Aceman",y0:2024,engines:["Électrique 184","Électrique 218"]}]},
+ {brand:"Fiat",o:"EU",models:[{model:"Panda IV",y0:2026,engines:["1.0 Hybrid 70","Électrique 118"]}]},
+ {brand:"Opel",o:"EU",models:[{model:"Corsa EV II",y0:2026,engines:["Électrique 156","Électrique 210"]}]}
+];
+
 function brandModels(b){ return b.models.map(m => { const p=m[0].split("|"); return { name:p[0], y0:+(p[1]||2017), engines:m[1].map(i=>b.pool[i]) }; }); }
 function findBrand(n){ return BRANDS.find(b=>b.n===n) || null; }
 function findModel(b,name){ return brandModels(b).find(m=>m.name===name) || null; }
 
-/* ===== ÉNERGIE par motorisation ===== */
-function energyLabel(e){
-  const s = String(e).toLowerCase();
-  if (/hybrid|hybride/.test(s)) return "Hybride";
-  if (/électrique|electrique|electric|\bev\b|\bbev\b|\bze\b/.test(s)) return "Électrique";
-  if (/e-?tech/.test(s)) return "Hybride";
-  if (/dci|hdi|bluehdi|tdi|d-4d|skyactiv-d|multijet|diesel|cdi|\b\d+d\b|td\b/.test(s)) return "Diesel";
-  if (/gpl|lpg/.test(s)) return "GPL";
-  return "Essence";
+/* Fusion d'un catalogue (statique CATALOG_EXT ou pack dynamique) dans BRANDS */
+function mergeCatalog(entries){
+  let added=0;
+  (entries||[]).forEach(en=>{
+    let b=findBrand(en.brand);
+    if(!b){ b={ n:en.brand, o:en.o||"AS", pool:[], models:[] }; BRANDS.push(b); }
+    (en.models||[]).forEach(md=>{
+      if(b.models.some(m=>m[0].split("|")[0]===md.model)) return;
+      const idx=(md.engines||[]).map(e=>{ let i=b.pool.indexOf(e); if(i<0){ b.pool.push(e); i=b.pool.length-1; } return i; });
+      if(idx.length){ b.models.push([md.model+"|"+(md.y0||2025), idx]); added++; }
+    });
+  });
+  return added;
+}
+function applyCatalogExt(){
+  mergeCatalog(CATALOG_EXT);
+  const pack = Store.read("mtk_catalog_pack_v1", null);
+  if (pack && pack.items) mergeCatalog(pack.items);
 }
 
+function energyLabel(e){
+  const s=String(e).toLowerCase();
+  if(/hybrid|hybride/.test(s)) return "Hybride";
+  if(/électrique|electrique|electric|\bev\b|\bbev\b|\bze\b/.test(s)) return "Électrique";
+  if(/e-?tech/.test(s)) return "Hybride";
+  if(/dci|hdi|bluehdi|tdi|d-4d|skyactiv-d|multijet|diesel|cdi|\b\d+d\b|td\b/.test(s)) return "Diesel";
+  if(/gpl|lpg/.test(s)) return "GPL";
+  return "Essence";
+}
 const DTC = {
   thermal_common:[["P0101","Débitmètre d'air — plage/performance"],["P0102","Débitmètre d'air — signal bas"],["P0113","Température air admission — signal haut"],["P0118","Température LDR — signal haut"],["P0128","Thermostat — sous régulation"],["P0217","Surchauffe moteur"],["P0505","Régulation ralenti"],["P0562","Tension système basse (12V)"],["P0606","Calculateur — défaillance interne"],["P0700","Boîte — demande voyant"],["P0741","Convertisseur de couple — performance"]],
   essence:[["P0171","Mélange trop pauvre"],["P0172","Mélange trop riche"],["P0300","Ratés d'allumage aléatoires"],["P0301","Ratés cylindre 1"],["P0351","Bobine d'allumage A"],["P0420","Catalyseur — rendement sous seuil"],["P0442","Evaporatif — petite fuite"],["P0340","Capteur AAC — circuit"],["P0016","Vilebrequin/AAC — corrélation"]],
@@ -83,10 +137,9 @@ const DTC = {
   hybrid:[["P0A0F","Démarrage impossible — HV faible"],["P0A80","Batterie HV — remplacement"],["P0A7E","Batterie HV — surchauffe"],["P1A00","Batterie HV — équilibrage"],["P0A1D","Module contrôle HV"]],
   electric:[["P0A0F","Impossibilité démarrage — HV"],["P0A80","Batterie HV — remplacement"],["P0A7E","Batterie HV — surchauffe"],["P0AA6","Isolation HV — défaillance"],["P0C00","Chargeur AC — performance"],["P0C29","Charge — interruption"],["P0C4A","Charge — temps anormal"],["P1A00","BMS — équilibrage"],["P1A15","BMS — calibration SOC"],["U0110","Perte comm onduleur"],["U0111","Perte comm batterie HV"],["U0112","Perte comm BMS"],["P0562","Tension 12V basse"],["P0A1D","Module contrôle HV"],["P0C1F","Charge — verrou connecteur"],["P0C24","Charge — température batterie"]]
 };
-
 const SYS = {
   thermal:[
-    {comp:"Système d'injection",fault:"Pression/qualité carburation hors plage",symptoms:["Ratés","Perte puissance","Voyant moteur"],causes:["Injecteurs encrassés","Pompe HP fatiguée","Capteur pression HS"],fixes:["Nettoyage/remplacement injecteurs","Contrôle pompe HP"],dtcs:["P0201","P0087"],sev:3},
+    {comp:"Système d'injection",fault:"Pression/qualité carburation hors plage",symptoms:["Ratés","Perte puissance","Voyant moteur"],causes:["Injecteurs encrassés","Pompe HP fatiguée"],fixes:["Nettoyage/remplacement injecteurs","Contrôle pompe HP"],dtcs:["P0201","P0087"],sev:3},
     {comp:"Distribution (chaîne/courroie)",fault:"Usure/élongation distribution",symptoms:["Claquement à froid","Voyant"],causes:["Tendeur fatigué","Lubrification insuffisante"],fixes:["Kit distribution","Contrôle lubrification"],dtcs:["P0016","P0340"],sev:4},
     {comp:"Lubrification",fault:"Pression d'huile insuffisante",symptoms:["Voyant huile","Bruits"],causes:["Pompe à huile usée","Crépine colmatée"],fixes:["Contrôle pression","Remplacement pompe/crépine"],dtcs:["P0520","P0524"],sev:4},
     {comp:"Refroidissement",fault:"Température hors régulation",symptoms:["Surchauffe","Voyant"],causes:["Pompe à eau HS","Thermostat bloqué"],fixes:["Remplacement pompe/thermostat"],dtcs:["P0128","P0217"],sev:3},
@@ -113,57 +166,41 @@ const SYS = {
     {comp:"Batterie 12V / DC-DC",fault:"Tension 12V basse",symptoms:["Démarrage impossible"],causes:["12V fatiguée","DC-DC HS"],fixes:["Remplacement 12V"],dtcs:["P0562"],sev:3},
     {comp:"Connecteur / verrou de charge",fault:"Verrouillage charge",symptoms:["Charge interrompue"],causes:["Verrou HS"],fixes:["Contrôle verrou"],dtcs:["P0C1F"],sev:2}]
 };
-
 const DT = (() => {
-  const SEVL = ["Mineure","Modérée","Sérieuse","Critique"];
-  const energyOf = e => energyLabel(e);
-  const fuelOf = e => energyLabel(e);
-
-  function faultsForVehicle(brand, modelKey, engine){
-    const en = energyLabel(engine);
-    let pool;
-    if (en==="Électrique") pool = DTC.electric;
-    else if (en==="Hybride") pool = DTC.hybrid.concat(DTC.thermal_common, DTC.essence.slice(0,4));
-    else if (en==="Diesel") pool = DTC.diesel.concat(DTC.thermal_common);
-    else pool = DTC.essence.concat(DTC.thermal_common);
-    return { fuel: en, faults: pool.map(p => ({ key:p[0], code:p[0], title:p[1], sev:3, sevLabel:SEVL[2],
-      brands:[brand], motors:[engine], years:"2017-2026", generic:false, brand:brand,
-      symptoms:["Voyant moteur/propulsion"], causes:["Voir pannes système"], solutions:["Lecture DTC + diagnostic"] })) };
+  const SEVL=["Mineure","Modérée","Sérieuse","Critique"];
+  const energyOf=e=>energyLabel(e); const fuelOf=e=>energyLabel(e);
+  function faultsForVehicle(brand,modelKey,engine){
+    const en=energyLabel(engine); let pool;
+    if(en==="Électrique") pool=DTC.electric;
+    else if(en==="Hybride") pool=DTC.hybrid.concat(DTC.thermal_common,DTC.essence.slice(0,4));
+    else if(en==="Diesel") pool=DTC.diesel.concat(DTC.thermal_common);
+    else pool=DTC.essence.concat(DTC.thermal_common);
+    return { fuel:en, faults: pool.map(p=>({ key:p[0], code:p[0], title:p[1], sev:3, sevLabel:SEVL[2], brands:[brand], motors:[engine], years:YR, generic:false, brand, symptoms:["Voyant moteur/propulsion"], causes:["Voir pannes système"], solutions:["Lecture DTC + diagnostic"] })) };
   }
-  function systemFaultsFor(brand, modelKey, engine){
-    const en = energyLabel(engine);
-    let list;
-    if (en==="Électrique") list = SYS.electric;
-    else if (en==="Hybride") list = SYS.thermal.concat(SYS.essence_extra, SYS.hybrid_extra);
-    else if (en==="Diesel") list = SYS.thermal.concat(SYS.diesel_extra);
-    else list = SYS.thermal.concat(SYS.essence_extra);
-    return list.map(x => Object.assign({}, x, { sevLabel: SEVL[x.sev-1] }));
+  function systemFaultsFor(brand,modelKey,engine){
+    const en=energyLabel(engine); let list;
+    if(en==="Électrique") list=SYS.electric;
+    else if(en==="Hybride") list=SYS.thermal.concat(SYS.essence_extra,SYS.hybrid_extra);
+    else if(en==="Diesel") list=SYS.thermal.concat(SYS.diesel_extra);
+    else list=SYS.thermal.concat(SYS.essence_extra);
+    return list.map(x=>Object.assign({},x,{sevLabel:SEVL[x.sev-1]}));
   }
-
-  function codeFromIndex(i){ const L=["P","B","C","U"][Math.floor(i/4000)%4]; return L + String(i%4000).padStart(4,"0"); }
-  function genericTitle(code){
-    const L=code[0], n=+code.slice(1);
+  function codeFromIndex(i){ const L=["P","B","C","U"][Math.floor(i/4000)%4]; return L+String(i%4000).padStart(4,"0"); }
+  function genericTitle(code){ const L=code[0], n=+code.slice(1);
     if(L==="P"){ if(n<100)return "Powertrain — capteur/débit"; if(n<200)return "Powertrain — mélange/carburation"; if(n<300)return "Powertrain — injection/allumage"; if(n<400)return "Powertrain — dépollution"; if(n<500)return "Powertrain — vitesse/ralenti"; if(n<700)return "Powertrain — calculateur"; if(n<800)return "Powertrain — transmission"; if(n<3000)return "Powertrain — hybride/HV"; return "Powertrain — constructeur"; }
-    if(L==="B")return "Carrosserie — habitacle"; if(L==="C")return "Châssis — freinage/tenue"; return "Réseau — communication";
-  }
+    if(L==="B")return "Carrosserie — habitacle"; if(L==="C")return "Châssis — freinage/tenue"; return "Réseau — communication"; }
   function ficheAt(i){ const code=codeFromIndex(i); const t=genericTitle(code);
-    return { key:code, code, title:t, desc:t+" — fiche générique OBD-II.", sev:2, sevLabel:SEVL[1], brands:["Toutes marques"], motors:["Essence","Diesel","Hybride","Électrique"], years:"2017-2026", generic:true, brand:"", symptoms:["Voyant"], causes:["Selon système"], solutions:["Lecture DTC"] }; }
-  function ficheFromCode(code){
-    if(!/^[PBCU]\d{4}$/.test(code)) return null;
-    const li=["P","B","C","U"].indexOf(code[0]); const num=+code.slice(1);
-    if(num>=4000) return null;
-    return ficheAt(li*4000+num);
-  }
+    return { key:code, code, title:t, desc:t+" — fiche générique OBD-II.", sev:2, sevLabel:SEVL[1], brands:["Toutes marques"], motors:["Essence","Diesel","Hybride","Électrique"], years:YR, generic:true, brand:"", symptoms:["Voyant"], causes:["Selon système"], solutions:["Lecture DTC"] }; }
+  function ficheFromCode(code){ if(!/^[PBCU]\d{4}$/.test(code)) return null; const li=["P","B","C","U"].indexOf(code[0]); const num=+code.slice(1); if(num>=4000) return null; return ficheAt(li*4000+num); }
   function findByCode(code){ code=code.toUpperCase(); const f=ficheFromCode(code); return f?[{key:code}]:[]; }
   return { energyOf, fuelOf, faultsForVehicle, systemFaultsFor, codeFromIndex, ficheAt, ficheFromCode, findByCode };
 })();
 function systemFaultsFor(b,m,e){ return DT.systemFaultsFor(b,m,e); }
-
 function resolveFiche(key){
   if (Store.isDeleted(key)) return null;
-  const ov = Store.getOverride(key); if (ov) return ov;
-  const cu = Store.customs().find(c=>c.key===key); if (cu) return cu;
-  if (key.includes("@")){ const [code,brand]=key.split("@"); const base=DT.ficheFromCode(code); if(!base) return null;
-    return Object.assign({}, base, { key, brand, brands:[brand], title:"["+brand+"] "+base.title }); }
+  const ov=Store.getOverride(key); if(ov) return ov;
+  const cu=Store.customs().find(c=>c.key===key); if(cu) return cu;
+  if(key.includes("@")){ const [code,brand]=key.split("@"); const base=DT.ficheFromCode(code); if(!base) return null; return Object.assign({},base,{key,brand,brands:[brand],title:"["+brand+"] "+base.title}); }
   return DT.ficheFromCode(key);
 }
+applyCatalogExt();
