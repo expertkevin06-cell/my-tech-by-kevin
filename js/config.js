@@ -1,12 +1,13 @@
 "use strict";
 const CONFIG = {
   APP_NAME: "Ma Tech by Kevin",
-  VERSION: "6.0.0",
+  VERSION: "7.0.0",
   PACKAGE_ID: "com.kevin.matech",
-  /* Seul ce mot de passe ouvre le mode admin (vérifié par hash SHA-256). */
   DEFAULT_ADMIN: { user: "admin", pass: "Kevin83600" },
-  /* Contact admin pour les demandes d'accès tiers (mailto). À personnaliser. */
   ADMIN_EMAIL: "contact@matechbykevin.fr",
+  /* Canal de notifications (sans mail/SMS) : topic ntfy.sh dédié à l'app. */
+  NTFY_TOPIC: "ma-tech-by-kevin-access-83600",
+  NTFY_BASE: "https://ntfy.sh",
   YEARS: [2017,2018,2019,2020,2021,2022,2023,2024,2025,2026],
   PAGE_SIZE: 50,
   TOTAL_FICHES: 21000,
